@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flight-delay-config
+data:
+  PORT: "5000"
+  FLASK_DEBUG: "false"
+  API_V1_STR: "/api/v1"
+
+  MODEL_PATH: "/app/ml/models/v1_model.json"
+  FLIGHT_DATA_PATH: "/app/datasets/flight_data.csv"
+
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+
+  DATABASE_URL: "sqlite:////app/data/flight_delay.db"
+  SQLALCHEMY_DATABASE_URI: "sqlite:////app/data/flight_delay.db"

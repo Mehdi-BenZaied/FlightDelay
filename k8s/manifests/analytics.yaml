@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics
+  labels:
+    app.kubernetes.io/name: analytics
+    app.kubernetes.io/part-of: flight-delay
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: analytics
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: analytics
+        app.kubernetes.io/part-of: flight-delay
+    spec:
+      containers:
+        - name: analytics
+          image: mehdibenzaied/flight-delay-backend:main-b21-ca2d8837
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - python
+            - analytics.py
+
+          ports:
+            - name: http
+              containerPort: 8050
+
+          envFrom:
+            - configMapRef:
+                name: flight-delay-config
+            - secretRef:
+                name: flight-delay-secrets
+                optional: true
+
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 36
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics
+  labels:
+    app.kubernetes.io/name: analytics
+    app.kubernetes.io/part-of: flight-delay
+spec:
+  selector:
+    app.kubernetes.io/name: analytics
+  ports:
+    - name: http
+      port: 8050
+      targetPort: http
