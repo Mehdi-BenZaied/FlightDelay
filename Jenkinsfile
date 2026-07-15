@@ -16,14 +16,12 @@ pipeline {
         FRONTEND_IMAGE = 'mehdibenzaied/flight-delay-frontend'
         BACKEND_IMAGE  = 'mehdibenzaied/flight-delay-backend'
 
-        // Jenkins credential containing:
-        // - Docker Hub username
-        // - Docker Hub access token
+        // Jenkins username/password credential for Docker Hub
         REGISTRY_CREDENTIALS = 'DockerHub'
 
-        COMPOSE_FILE = 'docker-compose.yml'
+       
 
-        // Persistent local deployment name
+        COMPOSE_FILE = 'docker-compose.yml'
         PROD_PROJECT = 'flight-delay-prod'
     }
 
@@ -55,7 +53,6 @@ pipeline {
                     rawBranch = rawBranch
                         .replaceFirst(/^\*\//, '')
                         .replaceFirst(/^origin\//, '')
-                        .replaceFirst(/^refs\/heads\//, '')
 
                     env.SOURCE_BRANCH = rawBranch
 
@@ -79,7 +76,6 @@ pipeline {
 
                 echo "Branch:          ${env.SOURCE_BRANCH}"
                 echo "Commit:          ${env.SHORT_SHA}"
-                echo "Image tag:       ${env.IMAGE_TAG}"
                 echo "Frontend image:  ${env.FRONTEND_REF}"
                 echo "Backend image:   ${env.BACKEND_REF}"
                 echo "Compose project: ${env.CI_PROJECT}"
@@ -91,25 +87,21 @@ pipeline {
                 sh '''
                     set -eu
 
-                    echo "Checking required project files..."
-
-                    test -f Jenkinsfile
-                    test -f docker-compose.yml
-
                     test -f backend/Dockerfile
                     test -f backend/requirements.txt
                     test -f backend/run.py
                     test -f backend/analytics.py
 
                     test -f frontend/Dockerfile
-                    test -f frontend/nginx.conf
                     test -f frontend/package.json
                     test -f frontend/package-lock.json
+                    test -f frontend/nginx.conf
 
                     test -f ml/models/v1_model.json
                     test -f data/flight_data.csv
+                    test -f "$COMPOSE_FILE"
 
-                    echo "All required project files are present."
+                    echo "Required project files are present."
                 '''
             }
         }
@@ -117,10 +109,11 @@ pipeline {
         stage('Validate Compose') {
             steps {
                 sh '''
-                    set -eu
+                    set +x
 
                     export FRONTEND_REF
                     export BACKEND_REF
+                    
 
                     export BACKEND_HOST_PORT=5000
                     export FRONTEND_HOST_PORT=5173
@@ -142,9 +135,8 @@ pipeline {
                         sh '''
                             set -eu
 
-                            echo "Building frontend image..."
-
                             docker build \
+                              --pull \
                               --target runtime \
                               --file frontend/Dockerfile \
                               --tag "$FRONTEND_REF" \
@@ -158,14 +150,10 @@ pipeline {
                         sh '''
                             set -eu
 
-                            echo "Building backend image..."
-
-                            # The project root is required as the build
-                            # context because the image needs:
-                            # - backend/
-                            # - ml/
-                            # - data/
+                            # The project root is the build context because
+                            # the backend image requires backend/, ml/ and data/.
                             docker build \
+                              --pull \
                               --target runtime \
                               --file backend/Dockerfile \
                               --tag "$BACKEND_REF" \
@@ -179,18 +167,11 @@ pipeline {
         stage('Inspect Images') {
             steps {
                 sh '''
-                    set -eu
+                    docker image inspect "$FRONTEND_REF" \
+                      --format='Frontend size: {{.Size}} bytes'
 
-                    echo "Built Docker images:"
-                    echo
-
-                    docker image inspect \
-                      "$FRONTEND_REF" \
-                      --format='Frontend: {{.RepoTags}} - {{.Size}} bytes'
-
-                    docker image inspect \
-                      "$BACKEND_REF" \
-                      --format='Backend: {{.RepoTags}} - {{.Size}} bytes'
+                    docker image inspect "$BACKEND_REF" \
+                      --format='Backend size: {{.Size}} bytes'
                 '''
             }
         }
@@ -199,17 +180,16 @@ pipeline {
             steps {
                 sh '''
                     set -eu
+                    set +x
 
                     export FRONTEND_REF
                     export BACKEND_REF
+                    
 
-                    # Port 0 asks Docker to allocate temporary random
-                    # host ports for the CI containers.
+                    # Docker assigns temporary random host ports.
                     export BACKEND_HOST_PORT=0
                     export FRONTEND_HOST_PORT=0
                     export ANALYTICS_HOST_PORT=0
-
-                    echo "Starting temporary integration environment..."
 
                     docker compose \
                       --project-name "$CI_PROJECT" \
@@ -217,253 +197,115 @@ pipeline {
                       up \
                       --detach \
                       --wait \
-                      --wait-timeout 240 \
                       --no-build
-
-                    echo
-                    echo "Container status:"
 
                     docker compose \
                       --project-name "$CI_PROJECT" \
                       --file "$COMPOSE_FILE" \
                       ps
 
-                    echo
-                    echo "Testing backend health endpoint..."
-
+                    echo "Testing backend health..."
                     docker compose \
                       --project-name "$CI_PROJECT" \
                       --file "$COMPOSE_FILE" \
                       exec -T backend \
-                      curl \
-                        --fail \
-                        --silent \
-                        --show-error \
-                        http://localhost:5000/health
+                      curl --fail --silent --show-error \
+                      http://localhost:5000/health
 
                     echo
                     echo "Testing frontend..."
-
                     docker compose \
                       --project-name "$CI_PROJECT" \
                       --file "$COMPOSE_FILE" \
                       exec -T frontend \
-                      wget \
-                        --quiet \
-                        --tries=1 \
-                        --output-document=/dev/null \
-                        http://localhost/
+                      wget --quiet --output-document=- \
+                      http://localhost/ > /dev/null
 
-                    echo "Frontend test succeeded."
-
-                    echo
                     echo "Testing analytics dashboard..."
-
                     docker compose \
                       --project-name "$CI_PROJECT" \
                       --file "$COMPOSE_FILE" \
                       exec -T analytics \
-                      curl \
-                        --fail \
-                        --silent \
-                        --show-error \
-                        http://localhost:8050/ \
-                        --output /dev/null
+                      curl --fail --silent --show-error \
+                      http://localhost:8050/ > /dev/null
 
-                    echo "Analytics test succeeded."
-
-                    echo
                     echo "Checking prediction model..."
-
                     docker compose \
                       --project-name "$CI_PROJECT" \
                       --file "$COMPOSE_FILE" \
                       exec -T backend \
                       test -f /app/ml/models/v1_model.json
 
-                    echo "Prediction model exists."
-
-                    echo
                     echo "Checking analytics dataset..."
-
                     docker compose \
                       --project-name "$CI_PROJECT" \
                       --file "$COMPOSE_FILE" \
                       exec -T analytics \
                       test -f /app/datasets/flight_data.csv
 
-                    echo "Analytics dataset exists."
-
-                    echo
-                    echo "Checking Python dependencies..."
-
-                    docker compose \
-                      --project-name "$CI_PROJECT" \
-                      --file "$COMPOSE_FILE" \
-                      exec -T backend \
-                      python -c "
-import gevent
-import flask
-import redis
-import shap
-import xgboost
-
-print('Required Python dependencies are available')
-"
-
-                    echo
                     echo "Checking PredictionService methods..."
-
                     docker compose \
                       --project-name "$CI_PROJECT" \
                       --file "$COMPOSE_FILE" \
                       exec -T backend \
                       python -c "
-from app.services.prediction_service import PredictionService
+                    from app.services.prediction_service import PredictionService
 
-required_methods = [
-    'get_prediction',
-    'get_history',
-    'fetch_weather',
-]
+                    required_methods = [
+                        'get_prediction',
+                        'get_history',
+                        'fetch_weather',
+                    ]
 
-missing_methods = [
-    method
-    for method in required_methods
-    if not hasattr(PredictionService, method)
-]
+                    missing = [
+                        name
+                        for name in required_methods
+                        if not hasattr(PredictionService, name)
+                    ]
 
-if missing_methods:
-    raise RuntimeError(
-        f'Missing PredictionService methods: {missing_methods}'
-    )
+                    if missing:
+                        raise RuntimeError(
+                            f'Missing PredictionService methods: {missing}'
+                        )
 
-print('PredictionService validation succeeded')
-"
-
-                    echo
-                    echo "Integration tests succeeded."
+                    print('PredictionService validation succeeded')
+                    "
                 '''
             }
 
             post {
                 unsuccessful {
                     sh '''
-                        set +e
+                        set +x
 
                         export FRONTEND_REF
                         export BACKEND_REF
+                        
 
                         export BACKEND_HOST_PORT=0
                         export FRONTEND_HOST_PORT=0
                         export ANALYTICS_HOST_PORT=0
 
-                        echo
-                        echo "========================================"
-                        echo "Integration test failed"
-                        echo "========================================"
-
-                        echo
-                        echo "Container status:"
+                        echo "Integration test failed. Container logs:"
 
                         docker compose \
                           --project-name "$CI_PROJECT" \
                           --file "$COMPOSE_FILE" \
-                          ps --all || true
-
-                        echo
-                        echo "========================================"
-                        echo "Backend logs"
-                        echo "========================================"
-
-                        docker compose \
-                          --project-name "$CI_PROJECT" \
-                          --file "$COMPOSE_FILE" \
-                          logs \
-                          --no-color \
-                          --timestamps \
-                          backend || true
-
-                        echo
-                        echo "========================================"
-                        echo "Analytics logs"
-                        echo "========================================"
-
-                        docker compose \
-                          --project-name "$CI_PROJECT" \
-                          --file "$COMPOSE_FILE" \
-                          logs \
-                          --no-color \
-                          --timestamps \
-                          analytics || true
-
-                        echo
-                        echo "========================================"
-                        echo "Frontend logs"
-                        echo "========================================"
-
-                        docker compose \
-                          --project-name "$CI_PROJECT" \
-                          --file "$COMPOSE_FILE" \
-                          logs \
-                          --no-color \
-                          --timestamps \
-                          frontend || true
-
-                        echo
-                        echo "========================================"
-                        echo "Redis logs"
-                        echo "========================================"
-
-                        docker compose \
-                          --project-name "$CI_PROJECT" \
-                          --file "$COMPOSE_FILE" \
-                          logs \
-                          --no-color \
-                          --timestamps \
-                          redis || true
-
-                        echo
-                        echo "========================================"
-                        echo "Backend container inspection"
-                        echo "========================================"
-
-                        BACKEND_CONTAINER_ID="$(
-                            docker compose \
-                              --project-name "$CI_PROJECT" \
-                              --file "$COMPOSE_FILE" \
-                              ps --quiet backend
-                        )"
-
-                        if [ -n "$BACKEND_CONTAINER_ID" ]; then
-                            docker inspect \
-                              --format='Status: {{.State.Status}}' \
-                              "$BACKEND_CONTAINER_ID" || true
-
-                            docker inspect \
-                              --format='Exit code: {{.State.ExitCode}}' \
-                              "$BACKEND_CONTAINER_ID" || true
-
-                            docker inspect \
-                              --format='Health: {{json .State.Health}}' \
-                              "$BACKEND_CONTAINER_ID" || true
-                        fi
+                          logs --no-color || true
                     '''
                 }
 
-                cleanup {
+                always {
                     sh '''
-                        set +e
+                        set +x
 
                         export FRONTEND_REF
                         export BACKEND_REF
+                       
 
                         export BACKEND_HOST_PORT=0
                         export FRONTEND_HOST_PORT=0
                         export ANALYTICS_HOST_PORT=0
-
-                        echo
-                        echo "Removing temporary integration environment..."
 
                         docker compose \
                           --project-name "$CI_PROJECT" \
@@ -493,15 +335,15 @@ print('PredictionService validation succeeded')
 
                 sh '''
                     set -eu
+                    set +x
 
                     export FRONTEND_REF
                     export BACKEND_REF
+                   
 
                     export BACKEND_HOST_PORT=5000
                     export FRONTEND_HOST_PORT=5173
                     export ANALYTICS_HOST_PORT=8050
-
-                    echo "Starting persistent local deployment..."
 
                     docker compose \
                       --project-name "$PROD_PROJECT" \
@@ -509,13 +351,12 @@ print('PredictionService validation succeeded')
                       up \
                       --detach \
                       --wait \
-                      --wait-timeout 240 \
                       --no-build \
                       --force-recreate \
                       --remove-orphans
 
                     echo
-                    echo "Persistent deployment status:"
+                    echo "Persistent local deployment:"
 
                     docker compose \
                       --project-name "$PROD_PROJECT" \
@@ -545,20 +386,16 @@ print('PredictionService validation succeeded')
                         set -eu
                         set +x
 
-                        trap 'docker logout >/dev/null 2>&1 || true' EXIT
-
                         echo "$REGISTRY_TOKEN" |
                           docker login \
                             --username "$REGISTRY_USER" \
                             --password-stdin
 
-                        echo "Pushing immutable image tags..."
-
+                        # Immutable build tags
                         docker push "$FRONTEND_REF"
                         docker push "$BACKEND_REF"
 
-                        echo "Creating branch-specific latest tags..."
-
+                        # Branch-specific latest tags
                         docker tag \
                           "$FRONTEND_REF" \
                           "$FRONTEND_IMAGE:$SAFE_BRANCH-latest"
@@ -573,9 +410,8 @@ print('PredictionService validation succeeded')
                         docker push \
                           "$BACKEND_IMAGE:$SAFE_BRANCH-latest"
 
+                        # Global latest tags only for main
                         if [ "$SOURCE_BRANCH" = "main" ]; then
-                            echo "Creating global latest tags..."
-
                             docker tag \
                               "$FRONTEND_REF" \
                               "$FRONTEND_IMAGE:latest"
@@ -587,6 +423,8 @@ print('PredictionService validation succeeded')
                             docker push "$FRONTEND_IMAGE:latest"
                             docker push "$BACKEND_IMAGE:latest"
                         fi
+
+                        docker logout
                     '''
                 }
             }
@@ -601,15 +439,13 @@ print('PredictionService validation succeeded')
 
             steps {
                 sh '''
-                    echo "Persistent deployment:"
-
                     docker compose \
                       --project-name "$PROD_PROJECT" \
                       --file "$COMPOSE_FILE" \
                       ps
 
                     echo
-                    echo "FlightDelayAI URLs:"
+                    echo "FlightDelayAI is available at:"
                     echo "Frontend:  http://localhost:5173"
                     echo "Backend:   http://localhost:5000"
                     echo "Analytics: http://localhost:8050"
@@ -622,20 +458,20 @@ print('PredictionService validation succeeded')
     post {
         success {
             echo """
-Pipeline succeeded.
+            Pipeline succeeded.
 
-Branch: ${env.SOURCE_BRANCH}
-Tag:    ${env.IMAGE_TAG}
-"""
+            Branch: ${env.SOURCE_BRANCH}
+            Tag:    ${env.IMAGE_TAG}
+            """
         }
 
         failure {
             echo """
-Pipeline failed.
+            Pipeline failed.
 
-Check the failing stage and the container logs printed above.
-The persistent main deployment was not removed automatically.
-"""
+            Check the failing stage and its container logs.
+            The persistent main deployment may still be running.
+            """
         }
 
         always {
