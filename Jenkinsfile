@@ -19,9 +19,7 @@ pipeline {
         // Jenkins username/password credential for Docker Hub
         REGISTRY_CREDENTIALS = 'DockerHub'
 
-        // Jenkins Secret Text credentials
-        SECRET_KEY      = credentials('FlightDelaySecretKey')
-        WEATHER_API_KEY = credentials('OpenWeatherApiKey')
+       
 
         COMPOSE_FILE = 'docker-compose.yml'
         PROD_PROJECT = 'flight-delay-prod'
@@ -115,8 +113,7 @@ pipeline {
 
                     export FRONTEND_REF
                     export BACKEND_REF
-                    export SECRET_KEY
-                    export WEATHER_API_KEY
+                    
 
                     export BACKEND_HOST_PORT=5000
                     export FRONTEND_HOST_PORT=5173
@@ -187,8 +184,7 @@ pipeline {
 
                     export FRONTEND_REF
                     export BACKEND_REF
-                    export SECRET_KEY
-                    export WEATHER_API_KEY
+                    
 
                     # Docker assigns temporary random host ports.
                     export BACKEND_HOST_PORT=0
@@ -284,8 +280,7 @@ pipeline {
 
                         export FRONTEND_REF
                         export BACKEND_REF
-                        export SECRET_KEY
-                        export WEATHER_API_KEY
+                        
 
                         export BACKEND_HOST_PORT=0
                         export FRONTEND_HOST_PORT=0
@@ -306,8 +301,7 @@ pipeline {
 
                         export FRONTEND_REF
                         export BACKEND_REF
-                        export SECRET_KEY
-                        export WEATHER_API_KEY
+                       
 
                         export BACKEND_HOST_PORT=0
                         export FRONTEND_HOST_PORT=0
@@ -345,8 +339,7 @@ pipeline {
 
                     export FRONTEND_REF
                     export BACKEND_REF
-                    export SECRET_KEY
-                    export WEATHER_API_KEY
+                   
 
                     export BACKEND_HOST_PORT=5000
                     export FRONTEND_HOST_PORT=5173
