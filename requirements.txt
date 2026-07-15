@@ -1,0 +1,36 @@
+# Flight Delay AI Production Requirements
+
+# Web Framework & Extensions
+flask
+flask-migrate
+flask-sqlalchemy
+flask-login
+flask-admin
+flask-bcrypt
+flask-cors
+
+# Analytics & Dashboard
+dash
+dash-bootstrap-components
+plotly
+statsmodels
+
+# Data Science & ML
+pandas
+numpy
+scikit-learn
+xgboost
+pydantic
+pydantic-settings
+
+# Infrastructure
+gunicorn
+psycopg2-binary
+requests
+python-dotenv
+shap
+matplotlib
+flask-socketio
+redis
+gevent
+gevent-websocket

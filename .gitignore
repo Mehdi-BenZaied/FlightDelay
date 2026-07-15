@@ -1,0 +1,38 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# VSCode settings (optional)
+.vscode/
+
+# Environments
+.env
+.venv
+venv/
+ENV/
+
+# Flask migrations cache
+migrations/__pycache__/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Secrets (in case you accidentally write one)
+config.py
+
+# Databases
+*.db
+backend/*.db
+flight_delay.db
+
+# Frontend Node artifacts
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+
