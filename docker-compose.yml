@@ -1,12 +1,8 @@
 name: flight-delay-ai
 
 services:
-  # =======================================================
-  # Redis cache
-  # =======================================================
   redis:
     image: redis:7-alpine
-    restart: unless-stopped
 
     command:
       - redis-server
@@ -21,54 +17,52 @@ services:
         - CMD
         - redis-cli
         - ping
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 12
       start_period: 5s
+
+    restart: unless-stopped
 
     networks:
       - flight-delay-network
 
-  # =======================================================
-  # Flask API backend
-  # =======================================================
   backend:
     image: ${BACKEND_REF:-flight-delay-backend:local}
 
     build:
-      # The backend image needs access to:
-      # - backend/
-      # - ml/
-      # - data/
       context: .
       dockerfile: backend/Dockerfile
       target: runtime
 
-    restart: unless-stopped
-
     environment:
       PORT: "5000"
       FLASK_DEBUG: "false"
+
       API_V1_STR: "/api/v1"
 
       SECRET_KEY: ${SECRET_KEY:-development-secret-change-me}
       WEATHER_API_KEY: ${WEATHER_API_KEY:-}
 
-      MODEL_PATH: /app/ml/models/v1_model.json
-      FLIGHT_DATA_PATH: /app/datasets/flight_data.csv
+      MODEL_PATH: "/app/ml/models/v1_model.json"
+      FLIGHT_DATA_PATH: "/app/datasets/flight_data.csv"
 
-      REDIS_HOST: redis
+      REDIS_HOST: "redis"
       REDIS_PORT: "6379"
       REDIS_DB: "0"
 
-      DATABASE_URL: sqlite:////app/data/flight_delay.db
-      SQLALCHEMY_DATABASE_URI: sqlite:////app/data/flight_delay.db
+      DATABASE_URL: "sqlite:////app/data/flight_delay.db"
+      SQLALCHEMY_DATABASE_URI: "sqlite:////app/data/flight_delay.db"
 
-    volumes:
-      - backend_data:/app/data
+    command:
+      - python
+      - run.py
 
     ports:
       - "${BACKEND_HOST_PORT:-5000}:5000"
+
+    volumes:
+      - backend_data:/app/data
 
     depends_on:
       redis:
@@ -76,57 +70,55 @@ services:
 
     healthcheck:
       test:
-        - CMD
-        - curl
-        - --fail
-        - --silent
-        - --show-error
-        - http://localhost:5000/health
-      interval: 15s
-      timeout: 5s
-      retries: 5
+        - CMD-SHELL
+        - >-
+          curl --fail --silent --show-error
+          http://127.0.0.1:5000/health
+          > /dev/null
+          || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 12
       start_period: 60s
+
+    restart: unless-stopped
 
     networks:
       - flight-delay-network
 
-  # =======================================================
-  # Dash analytics dashboard
-  #
-  # It uses the same image as the backend because that image
-  # already contains Python, analytics.py, ml/ and data/.
-  # =======================================================
   analytics:
     image: ${BACKEND_REF:-flight-delay-backend:local}
+
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+
+    environment:
+      FLASK_DEBUG: "false"
+
+      SECRET_KEY: ${SECRET_KEY:-development-secret-change-me}
+      WEATHER_API_KEY: ${WEATHER_API_KEY:-}
+
+      MODEL_PATH: "/app/ml/models/v1_model.json"
+      FLIGHT_DATA_PATH: "/app/datasets/flight_data.csv"
+
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      REDIS_DB: "0"
+
+      DATABASE_URL: "sqlite:////app/data/flight_delay.db"
+      SQLALCHEMY_DATABASE_URI: "sqlite:////app/data/flight_delay.db"
 
     command:
       - python
       - analytics.py
 
-    restart: unless-stopped
-
-    environment:
-      PORT: "8050"
-
-      SECRET_KEY: ${SECRET_KEY:-development-secret-change-me}
-      WEATHER_API_KEY: ${WEATHER_API_KEY:-}
-
-      MODEL_PATH: /app/ml/models/v1_model.json
-      FLIGHT_DATA_PATH: /app/datasets/flight_data.csv
-
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_DB: "0"
-
-      DATABASE_URL: sqlite:////app/data/flight_delay.db
-      SQLALCHEMY_DATABASE_URI: sqlite:////app/data/flight_delay.db
-
-    volumes:
-      # Backend and analytics share the same SQLite database.
-      - backend_data:/app/data
-
     ports:
       - "${ANALYTICS_HOST_PORT:-8050}:8050"
+
+    volumes:
+      - backend_data:/app/data
 
     depends_on:
       redis:
@@ -136,23 +128,22 @@ services:
 
     healthcheck:
       test:
-        - CMD
-        - curl
-        - --fail
-        - --silent
-        - --show-error
-        - http://localhost:8050/
-      interval: 15s
-      timeout: 5s
-      retries: 5
+        - CMD-SHELL
+        - >-
+          curl --fail --silent --show-error
+          http://127.0.0.1:8050/
+          > /dev/null
+          || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 12
       start_period: 60s
+
+    restart: unless-stopped
 
     networks:
       - flight-delay-network
 
-  # =======================================================
-  # React/Vite frontend served by Nginx
-  # =======================================================
   frontend:
     image: ${FRONTEND_REF:-flight-delay-frontend:local}
 
@@ -160,8 +151,6 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: runtime
-
-    restart: unless-stopped
 
     ports:
       - "${FRONTEND_HOST_PORT:-5173}:80"
@@ -172,33 +161,28 @@ services:
 
     healthcheck:
       test:
-        - CMD
-        - wget
-        - --quiet
-        - --tries=1
-        - --spider
-        - http://localhost/
-      interval: 15s
+        - CMD-SHELL
+        - >-
+          wget
+          --quiet
+          --tries=1
+          --output-document=/dev/null
+          http://127.0.0.1/health
+          || exit 1
+      interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 10s
+      retries: 12
+      start_period: 15s
+
+    restart: unless-stopped
 
     networks:
       - flight-delay-network
 
-# =========================================================
-# Persistent volumes
-# =========================================================
 volumes:
   backend_data:
-    driver: local
-
   redis_data:
-    driver: local
 
-# =========================================================
-# Internal application network
-# =========================================================
 networks:
   flight-delay-network:
     driver: bridge
