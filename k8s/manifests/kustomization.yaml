@@ -5,6 +5,7 @@ namespace: flight-delay
 
 resources:
   - namespace.yaml
+  - serviceaccount.yaml
   - configmap.yaml
   - storage.yaml
   - redis.yaml

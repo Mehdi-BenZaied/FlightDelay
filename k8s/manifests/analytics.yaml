@@ -8,6 +8,9 @@ metadata:
 spec:
   replicas: 1
 
+  strategy:
+    type: Recreate
+
   selector:
     matchLabels:
       app.kubernetes.io/name: analytics
@@ -17,10 +20,13 @@ spec:
       labels:
         app.kubernetes.io/name: analytics
         app.kubernetes.io/part-of: flight-delay
+
     spec:
+      serviceAccountName: flight-delay
+
       containers:
         - name: analytics
-          image: mehdibenzaied/flight-delay-backend:main-b21-ca2d8837
+          image: mehdibenzaied/flight-delay-backend
           imagePullPolicy: IfNotPresent
 
           command:
@@ -30,13 +36,11 @@ spec:
           ports:
             - name: http
               containerPort: 8050
+              protocol: TCP
 
           envFrom:
             - configMapRef:
                 name: flight-delay-config
-            - secretRef:
-                name: flight-delay-secrets
-                optional: true
 
           startupProbe:
             httpGet:
@@ -44,7 +48,7 @@ spec:
               port: http
             periodSeconds: 5
             timeoutSeconds: 5
-            failureThreshold: 36
+            failureThreshold: 60
 
           readinessProbe:
             httpGet:
@@ -70,6 +74,15 @@ spec:
               cpu: "2"
               memory: 2Gi
 
+          volumeMounts:
+            - name: backend-data
+              mountPath: /app/data
+
+      volumes:
+        - name: backend-data
+          persistentVolumeClaim:
+            claimName: backend-data
+
 ---
 apiVersion: v1
 kind: Service
@@ -79,9 +92,13 @@ metadata:
     app.kubernetes.io/name: analytics
     app.kubernetes.io/part-of: flight-delay
 spec:
+  type: ClusterIP
+
   selector:
     app.kubernetes.io/name: analytics
+
   ports:
     - name: http
       port: 8050
       targetPort: http
+      protocol: TCP

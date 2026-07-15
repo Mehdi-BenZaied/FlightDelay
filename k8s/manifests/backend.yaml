@@ -20,24 +20,27 @@ spec:
       labels:
         app.kubernetes.io/name: backend
         app.kubernetes.io/part-of: flight-delay
+
     spec:
+      serviceAccountName: flight-delay
+
       containers:
         - name: backend
-          image: mehdibenzaied/flight-delay-backend:main-b21-ca2d8837
+          image: mehdibenzaied/flight-delay-backend
           imagePullPolicy: IfNotPresent
+
+          command:
+            - python
+            - run.py
 
           ports:
             - name: http
               containerPort: 5000
+              protocol: TCP
 
           envFrom:
             - configMapRef:
                 name: flight-delay-config
-
-            # This Secret is optional for the first local deployment.
-            - secretRef:
-                name: flight-delay-secrets
-                optional: true
 
           startupProbe:
             httpGet:
@@ -45,7 +48,7 @@ spec:
               port: http
             periodSeconds: 5
             timeoutSeconds: 5
-            failureThreshold: 36
+            failureThreshold: 60
 
           readinessProbe:
             httpGet:
@@ -89,9 +92,13 @@ metadata:
     app.kubernetes.io/name: backend
     app.kubernetes.io/part-of: flight-delay
 spec:
+  type: ClusterIP
+
   selector:
     app.kubernetes.io/name: backend
+
   ports:
     - name: http
       port: 5000
       targetPort: http
+      protocol: TCP
