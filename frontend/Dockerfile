@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ------------------------------------------------------------
-# Dependencies
+# Install dependencies
 # ------------------------------------------------------------
 FROM node:22-alpine AS dependencies
 
@@ -15,7 +15,7 @@ RUN npm ci \
 
 
 # ------------------------------------------------------------
-# Frontend build
+# Build React/Vite application
 # ------------------------------------------------------------
 FROM dependencies AS builder
 
@@ -25,13 +25,12 @@ COPY . .
 
 RUN npm run build
 
-# Fail immediately when Vite did not create the expected files.
 RUN test -d /app/dist \
     && test -f /app/dist/index.html
 
 
 # ------------------------------------------------------------
-# Nginx runtime
+# Nginx runtime image
 # ------------------------------------------------------------
 FROM nginx:1.27-alpine AS runtime
 
@@ -41,8 +40,10 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 COPY --from=builder /app/dist/ /usr/share/nginx/html/
 
-RUN test -f /usr/share/nginx/html/index.html \
-    && nginx -t
+# Only validate that the frontend files exist.
+# Do not run nginx -t during the Docker build because the
+# Compose service hostname "backend" does not exist yet.
+RUN test -f /usr/share/nginx/html/index.html
 
 EXPOSE 80
 
