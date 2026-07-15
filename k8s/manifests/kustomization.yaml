@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: flight-delay
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - storage.yaml
+  - redis.yaml
+  - backend.yaml
+  - analytics.yaml
+  - frontend.yaml
+
+images:
+  - name: mehdibenzaied/flight-delay-backend
+    newTag: main-b21-ca2d8837
+
+  - name: mehdibenzaied/flight-delay-frontend
+    newTag: main-b21-ca2d8837
