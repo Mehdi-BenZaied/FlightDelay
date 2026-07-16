@@ -5,18 +5,17 @@ backend:
 
 frontend:
   replicaCount: 1
+
   image:
-    tag: main-202607161900-same-origin
+    tag: main-20260716193242-same-origin
 
-analytics:
-  replicaCount: 1
-
-frontend:
   service:
     type: NodePort
     nodePort: 30080
 
 analytics:
+  replicaCount: 1
+
   service:
     type: NodePort
     nodePort: 30085
