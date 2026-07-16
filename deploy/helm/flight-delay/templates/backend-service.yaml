@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "flight-delay.fullname" . }}-backend
+  name: backend
   labels:
     {{- include "flight-delay.labels" . | nindent 4 }}
     app.kubernetes.io/component: backend

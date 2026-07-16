@@ -6,7 +6,7 @@ backend:
 frontend:
   replicaCount: 1
   image:
-    tag: main-latest
+    tag: main-202607161900-same-origin
 
 analytics:
   replicaCount: 1

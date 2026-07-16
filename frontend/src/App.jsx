@@ -10,7 +10,8 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 
 axios.defaults.withCredentials = true;
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || window.location.origin;
 
 export default function App() {
   const [history, setHistory] = useState([]);
@@ -39,7 +40,10 @@ export default function App() {
 
   useEffect(() => {
     // Connect to Flask WebSockets
-    const socket = io(API_BASE_URL);
+    const socket = io(API_BASE_URL, {
+  path: '/socket.io',
+  withCredentials: true,
+});
 
     socket.on('connect', () => {
       console.log('Connected to WebSockets server');

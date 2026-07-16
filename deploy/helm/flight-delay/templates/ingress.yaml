@@ -29,7 +29,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "flight-delay.fullname" . }}-backend
+                name: backend
                 port:
                   name: http
 
@@ -37,7 +37,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "flight-delay.fullname" . }}-backend
+                name: backend
                 port:
                   name: http
 
