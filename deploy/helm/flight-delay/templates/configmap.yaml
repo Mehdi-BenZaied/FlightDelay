@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "flight-delay.fullname" . }}-config
+  labels:
+    {{- include "flight-delay.labels" . | nindent 4 }}
+data:
+  PORT: {{ .Values.backend.containerPort | quote }}
+  FLASK_DEBUG: {{ .Values.config.flaskDebug | quote }}
+  API_V1_STR: {{ .Values.config.apiV1Str | quote }}
+
+  MODEL_PATH: {{ .Values.config.modelPath | quote }}
+  FLIGHT_DATA_PATH: {{ .Values.config.flightDataPath | quote }}
+
+  REDIS_HOST: {{ printf "%s-redis" (include "flight-delay.fullname" .) | quote }}
+  REDIS_PORT: {{ .Values.config.redisPort | quote }}
+  REDIS_DB: {{ .Values.config.redisDb | quote }}
+
+  DATABASE_URL: {{ .Values.config.databaseUrl | quote }}
+  SQLALCHEMY_DATABASE_URI: {{ .Values.config.databaseUrl | quote }}

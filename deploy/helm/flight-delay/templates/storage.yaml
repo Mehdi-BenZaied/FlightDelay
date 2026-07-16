@@ -1,0 +1,42 @@
+{{- if .Values.backend.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "flight-delay.fullname" . }}-backend-data
+  labels:
+    {{- include "flight-delay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  {{- with .Values.backend.persistence.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+
+  resources:
+    requests:
+      storage: {{ .Values.backend.persistence.size }}
+{{- end }}
+
+{{- if .Values.redis.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "flight-delay.fullname" . }}-redis-data
+  labels:
+    {{- include "flight-delay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  {{- with .Values.redis.persistence.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+
+  resources:
+    requests:
+      storage: {{ .Values.redis.persistence.size }}
+{{- end }}

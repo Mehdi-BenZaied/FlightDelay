@@ -1,0 +1,12 @@
+backend:
+  replicaCount: 1
+
+frontend:
+  replicaCount: 1
+
+analytics:
+  replicaCount: 1
+
+ingress:
+  enabled: true
+  host: test.flight-delay.example.com

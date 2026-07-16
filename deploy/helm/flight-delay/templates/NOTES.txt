@@ -1,0 +1,50 @@
+{{- $fullname := include "flight-delay.fullname" . }}
+
+FlightDelay was installed successfully.
+
+Release:
+  {{ .Release.Name }}
+
+Namespace:
+  {{ .Release.Namespace }}
+
+{{- if .Values.ingress.enabled }}
+
+Application URL:
+  {{- if .Values.ingress.tls }}
+  https://{{ .Values.ingress.host }}
+  {{- else }}
+  http://{{ .Values.ingress.host }}
+  {{- end }}
+
+{{- else if eq .Values.frontend.service.type "NodePort" }}
+
+Frontend NodePort:
+  {{ .Values.frontend.service.nodePort }}
+
+Use:
+  kubectl get nodes -o wide
+
+{{- else }}
+
+The frontend Service is internal.
+
+Use port-forwarding:
+
+  kubectl -n {{ .Release.Namespace }} port-forward \
+    service/{{ $fullname }}-frontend \
+    8080:{{ .Values.frontend.service.port }}
+
+Then open:
+
+  http://localhost:8080
+
+{{- end }}
+
+Check resources:
+
+  kubectl -n {{ .Release.Namespace }} get deploy,rs,pods,svc,pvc
+
+Check the Helm release:
+
+  helm status {{ .Release.Name }} -n {{ .Release.Namespace }}

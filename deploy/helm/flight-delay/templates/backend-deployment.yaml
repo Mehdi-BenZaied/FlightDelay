@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "flight-delay.fullname" . }}-backend
+  labels:
+    {{- include "flight-delay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+
+  strategy:
+    type: {{ default "Recreate" .Values.backend.strategyType }}
+
+  selector:
+    matchLabels:
+      {{- include "flight-delay.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+
+  template:
+    metadata:
+      labels:
+        {{- include "flight-delay.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+
+      {{- with .Values.backend.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.containerPort }}
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: {{ include "flight-delay.fullname" . }}-config
+
+            {{- with .Values.backend.existingSecret }}
+            - secretRef:
+                name: {{ . | quote }}
+            {{- end }}
+
+          startupProbe:
+            httpGet:
+              path: {{ .Values.backend.healthPath }}
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.healthPath }}
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.healthPath }}
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+
+          volumeMounts:
+            - name: backend-data
+              mountPath: /app/data
+
+      volumes:
+        - name: backend-data
+          {{- if .Values.backend.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "flight-delay.fullname" . }}-backend-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

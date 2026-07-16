@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "flight-delay.fullname" . }}-analytics
+  labels:
+    {{- include "flight-delay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: analytics
+spec:
+  type: {{ .Values.analytics.service.type }}
+
+  selector:
+    {{- include "flight-delay.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: analytics
+
+  ports:
+    - name: http
+      port: {{ .Values.analytics.service.port }}
+      targetPort: http
+      protocol: TCP
+
+      {{- if eq .Values.analytics.service.type "NodePort" }}
+      nodePort: {{ .Values.analytics.service.nodePort }}
+      {{- end }}

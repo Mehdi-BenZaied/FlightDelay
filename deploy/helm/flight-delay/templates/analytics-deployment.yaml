@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "flight-delay.fullname" . }}-analytics
+  labels:
+    {{- include "flight-delay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: analytics
+spec:
+  replicas: {{ .Values.analytics.replicaCount }}
+
+  selector:
+    matchLabels:
+      {{- include "flight-delay.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: analytics
+
+  template:
+    metadata:
+      labels:
+        {{- include "flight-delay.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: analytics
+
+      {{- with .Values.analytics.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      containers:
+        - name: analytics
+          image: "{{ .Values.analytics.image.repository }}:{{ .Values.analytics.image.tag }}"
+          imagePullPolicy: {{ .Values.analytics.image.pullPolicy }}
+
+          {{- with .Values.analytics.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- else }}
+          command:
+            - python
+            - analytics.py
+          {{- end }}
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.analytics.containerPort }}
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: {{ include "flight-delay.fullname" . }}-config
+
+            {{- with .Values.backend.existingSecret }}
+            - secretRef:
+                name: {{ . | quote }}
+            {{- end }}
+
+          startupProbe:
+            httpGet:
+              path: {{ .Values.analytics.healthPath }}
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.analytics.healthPath }}
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.analytics.healthPath }}
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          resources:
+            {{- toYaml .Values.analytics.resources | nindent 12 }}

@@ -1,0 +1,25 @@
+backend:
+  replicaCount: 1
+  image:
+    tag: main-latest
+
+frontend:
+  replicaCount: 1
+  image:
+    tag: main-latest
+
+analytics:
+  replicaCount: 1
+
+frontend:
+  service:
+    type: NodePort
+    nodePort: 30080
+
+analytics:
+  service:
+    type: NodePort
+    nodePort: 30085
+
+ingress:
+  enabled: false
