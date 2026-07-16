@@ -1,147 +1,346 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Send, Loader2, Info } from 'lucide-react';
 import axios from 'axios';
+import { motion } from 'framer-motion';
+import {
+  AlertCircle,
+  Info,
+  Loader2,
+  Send,
+} from 'lucide-react';
+
 import AirportAutocomplete from './AirportAutocomplete';
 
-export default function PredictionForm({ onNewPrediction }) {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    airline: '',
-    origin: '',
-    destination: '',
-    flight_duration: '',
-    congestion: 5,
-    aircraft_type: ''
-  });
-
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-
-  try {
-    const payload = {
-      ...formData,
-      flight_duration: Number(formData.flight_duration),
-      congestion: Number(formData.congestion),
-    };
-
-   const response = await axios.post(
-  '/api/v1/predict/',
-  {
-    ...formData,
-    flight_duration: Number(formData.flight_duration),
-    congestion: Number(formData.congestion),
-  },
-  {
-    withCredentials: true,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  }
-);
-
-    onNewPrediction(response.data);
-  } catch (error) {
-    console.error('Prediction error:', error);
-
-    const status = error.response?.status;
-    const backendMessage =
-      error.response?.data?.error ||
-      error.response?.data?.message ||
-      error.response?.data?.msg;
-
-    alert(
-      backendMessage ||
-      `Prediction failed${status ? ` (${status})` : ''}. Check the backend terminal.`
-    );
-  } finally {
-    setLoading(false);
-  }
+const INITIAL_FORM_DATA = {
+  airline: '',
+  origin: '',
+  destination: '',
+  flight_duration: '',
+  congestion: 5,
+  aircraft_type: '',
 };
 
+export default function PredictionForm({ onNewPrediction }) {
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
+  const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  const updateField = (field, value) => {
+    setFormData((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+  };
+
+  const validateForm = () => {
+    const duration = Number(formData.flight_duration);
+    const congestion = Number(formData.congestion);
+
+    if (!formData.airline.trim()) {
+      return 'Airline is required.';
+    }
+
+    if (!formData.aircraft_type.trim()) {
+      return 'Aircraft type is required.';
+    }
+
+    if (!formData.origin.trim()) {
+      return 'Origin airport is required.';
+    }
+
+    if (!formData.destination.trim()) {
+      return 'Destination airport is required.';
+    }
+
+    if (
+      formData.origin.trim().toUpperCase() ===
+      formData.destination.trim().toUpperCase()
+    ) {
+      return 'Origin and destination must be different.';
+    }
+
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return 'Flight duration must be greater than zero.';
+    }
+
+    if (
+      !Number.isInteger(congestion) ||
+      congestion < 1 ||
+      congestion > 10
+    ) {
+      return 'Congestion must be between 1 and 10.';
+    }
+
+    return null;
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (loading) {
+      return;
+    }
+
+    setSubmitError('');
+
+    const validationError = validateForm();
+
+    if (validationError) {
+      setSubmitError(validationError);
+      return;
+    }
+
+    const payload = {
+      airline: formData.airline.trim(),
+      origin: formData.origin.trim().toUpperCase(),
+      destination: formData.destination.trim().toUpperCase(),
+      flight_duration: Number(formData.flight_duration),
+      congestion: Number(formData.congestion),
+      aircraft_type: formData.aircraft_type.trim(),
+    };
+
+    setLoading(true);
+
+    try {
+      /*
+       * Relative URL:
+       *
+       * Browser:
+       *   POST http://localhost:8081/api/v1/predict/
+       *
+       * Frontend Nginx then proxies the request internally to:
+       *   http://backend:5000/api/v1/predict/
+       *
+       * Do not use http://localhost:5000 here.
+       */
+      const response = await axios.post(
+        '/api/v1/predict/',
+        payload,
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 120000,
+        },
+      );
+
+      if (typeof onNewPrediction === 'function') {
+        onNewPrediction(response.data);
+      }
+    } catch (error) {
+      console.error(
+        'Prediction request failed:',
+        error.response?.data ?? error.message,
+      );
+
+      if (error.code === 'ECONNABORTED') {
+        setSubmitError(
+          'The prediction request timed out. Please try again.',
+        );
+        return;
+      }
+
+      if (!error.response) {
+        setSubmitError(
+          'The backend could not be reached. Check the Kubernetes services and Nginx proxy.',
+        );
+        return;
+      }
+
+      const backendMessage =
+        error.response.data?.error ||
+        error.response.data?.message ||
+        error.response.data?.msg;
+
+      setSubmitError(
+        backendMessage ||
+          `Prediction failed with status ${error.response.status}.`,
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+    <motion.div
+      initial={{
+        opacity: 0,
+        y: 20,
+      }}
+      animate={{
+        opacity: 1,
+        y: 0,
+      }}
       className="glass-card p-8"
     >
-      <div className="flex items-center gap-3 mb-8">
-        <div className="bg-indigo-500/10 p-2 rounded-lg">
-          <Info className="text-indigo-400 w-5 h-5" />
+      <div className="mb-8 flex items-center gap-3">
+        <div className="rounded-lg bg-indigo-500/10 p-2">
+          <Info className="h-5 w-5 text-indigo-400" />
         </div>
-        <h2 className="text-2xl font-bold">New Estimation</h2>
+
+        <h2 className="text-2xl font-bold">
+          New Estimation
+        </h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {submitError && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+
+          <span>{submitError}</span>
+        </div>
+      )}
+
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6"
+      >
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-400">Airline</label>
-            <input 
+            <label
+              htmlFor="airline"
+              className="text-sm font-medium text-slate-400"
+            >
+              Airline
+            </label>
+
+            <input
+              id="airline"
+              type="text"
               required
+              disabled={loading}
+              autoComplete="organization"
               className="glass-input w-full"
               placeholder="e.g. American Airlines"
               value={formData.airline}
-              onChange={(e) => setFormData({...formData, airline: e.target.value})}
+              onChange={(event) =>
+                updateField('airline', event.target.value)
+              }
             />
           </div>
+
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-400">Aircraft Type</label>
-            <input 
+            <label
+              htmlFor="aircraft-type"
+              className="text-sm font-medium text-slate-400"
+            >
+              Aircraft Type
+            </label>
+
+            <input
+              id="aircraft-type"
+              type="text"
               required
+              disabled={loading}
               className="glass-input w-full"
               placeholder="e.g. Boeing 737"
               value={formData.aircraft_type}
-              onChange={(e) => setFormData({...formData, aircraft_type: e.target.value})}
+              onChange={(event) =>
+                updateField(
+                  'aircraft_type',
+                  event.target.value,
+                )
+              }
             />
           </div>
-          
+
           <AirportAutocomplete
             required
+            disabled={loading}
             label="Origin (IATA)"
             placeholder="Search e.g. JFK or New York"
             value={formData.origin}
-            onChange={(val) => setFormData({...formData, origin: val})}
+            onChange={(value) =>
+              updateField('origin', value)
+            }
           />
+
           <AirportAutocomplete
             required
+            disabled={loading}
             label="Destination (IATA)"
             placeholder="Search e.g. LAX or Chicago"
             value={formData.destination}
-            onChange={(val) => setFormData({...formData, destination: val})}
+            onChange={(value) =>
+              updateField('destination', value)
+            }
           />
         </div>
 
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <label className="text-sm font-medium text-slate-400">Congestion Level</label>
-            <span className="text-indigo-400 font-bold">{formData.congestion}</span>
+          <div className="flex items-center justify-between">
+            <label
+              htmlFor="congestion"
+              className="text-sm font-medium text-slate-400"
+            >
+              Congestion Level
+            </label>
+
+            <span className="font-bold text-indigo-400">
+              {formData.congestion}
+            </span>
           </div>
-          <input 
-            type="range" min="1" max="10" 
+
+          <input
+            id="congestion"
+            type="range"
+            min="1"
+            max="10"
+            step="1"
+            disabled={loading}
             className="w-full accent-indigo-500"
             value={formData.congestion}
-            onChange={(e) => setFormData({...formData, congestion: parseInt(e.target.value)})}
+            onChange={(event) =>
+              updateField(
+                'congestion',
+                Number(event.target.value),
+              )
+            }
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-400">Duration (Minutes)</label>
-          <input 
-            type="number" required
+          <label
+            htmlFor="flight-duration"
+            className="text-sm font-medium text-slate-400"
+          >
+            Duration (Minutes)
+          </label>
+
+          <input
+            id="flight-duration"
+            type="number"
+            min="1"
+            step="1"
+            required
+            disabled={loading}
+            inputMode="numeric"
             className="glass-input w-full"
             placeholder="e.g. 330"
             value={formData.flight_duration}
-            onChange={(e) => setFormData({...formData, flight_duration: e.target.value})}
+            onChange={(event) =>
+              updateField(
+                'flight_duration',
+                event.target.value,
+              )
+            }
           />
         </div>
 
-        <button 
+        <button
+          type="submit"
           disabled={loading}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-xl shadow-indigo-500/20 mt-4"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-4 font-bold shadow-xl shadow-indigo-500/20 transition-all hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />}
-          {loading ? 'Analyzing Data...' : 'Generate Prediction'}
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Send className="h-5 w-5" />
+          )}
+
+          {loading
+            ? 'Analyzing Data...'
+            : 'Generate Prediction'}
         </button>
       </form>
     </motion.div>
