@@ -15,7 +15,7 @@ resources:
 
 images:
   - name: mehdibenzaied/flight-delay-backend
-    newTag: main-b21-ca2d8837
+    newTag: main-latest
 
   - name: mehdibenzaied/flight-delay-frontend
-    newTag: main-b21-ca2d8837
+    newTag: main-latest
