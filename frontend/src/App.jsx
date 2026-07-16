@@ -1,121 +1,293 @@
-import React, { useState, useEffect } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
 import axios from 'axios';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Lock,
+  User,
+  X,
+} from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { io } from 'socket.io-client';
+
 import Navbar from './components/Navbar';
 import PredictionForm from './components/PredictionForm';
 import HistoryList from './components/HistoryList';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle2, Lock, User, AlertCircle, Loader2 } from 'lucide-react';
-import { io } from 'socket.io-client';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
-axios.defaults.withCredentials = true;
+/*
+ * Use relative routes so browser requests go to the same origin as the
+ * frontend:
+ *
+ *   Browser -> http://localhost:8081/api/...
+ *   Nginx   -> http://backend:5000/api/...
+ *
+ * Never use http://backend:5000 from browser-side JavaScript.
+ * "backend" is only resolvable inside Kubernetes.
+ */
+const api = axios.create({
+  baseURL: '/api/v1',
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || window.location.origin;
+const EMPTY_STATS = {
+  total_predictions: 0,
+  average_delay: 0,
+  most_congested_airport: 'N/A',
+};
+
+function normalizeHistory(payload) {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.history)) {
+    return payload.history;
+  }
+
+  if (Array.isArray(payload?.items)) {
+    return payload.items;
+  }
+
+  return [];
+}
+
+function normalizeStats(payload) {
+  const source = payload?.stats ?? payload ?? {};
+
+  return {
+    total_predictions: Number(source.total_predictions ?? 0),
+    average_delay: Number(source.average_delay ?? 0),
+    most_congested_airport:
+      source.most_congested_airport || 'N/A',
+  };
+}
+
+function normalizeUser(payload) {
+  return payload?.user ?? payload ?? null;
+}
 
 export default function App() {
   const [history, setHistory] = useState([]);
   const [user, setUser] = useState(null);
   const [lastPrediction, setLastPrediction] = useState(null);
-  
-  // Stats states
-  const [stats, setStats] = useState({
-    total_predictions: 0,
-    average_delay: 0.0,
-    most_congested_airport: 'N/A'
-  });
-  
-  // Auth Modal states
-  const [authModal, setAuthModal] = useState(null); // 'login' | 'register' | null
+  const [stats, setStats] = useState(EMPTY_STATS);
+
+  const [authModal, setAuthModal] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  useEffect(() => {
-    checkAuth();
-    fetchHistory();
-    fetchStats();
+  const fetchStats = useCallback(async () => {
+    try {
+      const response = await api.get('/predict/stats');
+      const nextStats = normalizeStats(response.data);
+
+      setStats(nextStats);
+      return nextStats;
+    } catch (error) {
+      console.error(
+        'Failed to load prediction statistics:',
+        error.response?.data ?? error.message,
+      );
+
+      return null;
+    }
   }, []);
 
-  useEffect(() => {
-    // Connect to Flask WebSockets
-    const socket = io(API_BASE_URL, {
-  path: '/socket.io',
-  withCredentials: true,
-});
+  const fetchHistory = useCallback(async () => {
+    try {
+      const response = await api.get('/predict/history', {
+        params: {
+          limit: 6,
+        },
+      });
 
-    socket.on('connect', () => {
-      console.log('Connected to WebSockets server');
+      const nextHistory = normalizeHistory(response.data);
+
+      setHistory(nextHistory);
+      return nextHistory;
+    } catch (error) {
+      console.error(
+        'Failed to load activity history:',
+        error.response?.data ?? error.message,
+      );
+
+      return [];
+    }
+  }, []);
+
+  const checkAuth = useCallback(async () => {
+    try {
+      const response = await api.get('/auth/me');
+      const currentUser = normalizeUser(response.data);
+
+      setUser(currentUser);
+      return currentUser;
+    } catch (error) {
+      /*
+       * A 401 response is normal when the visitor is not signed in.
+       * Do not treat it as a fatal application error.
+       */
+      if (error.response?.status !== 401) {
+        console.error(
+          'Failed to check authentication:',
+          error.response?.data ?? error.message,
+        );
+      }
+
+      setUser(null);
+      return null;
+    }
+  }, []);
+
+  const refreshDashboard = useCallback(async () => {
+    await Promise.allSettled([
+      fetchHistory(),
+      fetchStats(),
+    ]);
+  }, [fetchHistory, fetchStats]);
+
+  /*
+   * Load authentication, history and statistics when the application starts.
+   */
+  useEffect(() => {
+    void Promise.allSettled([
+      checkAuth(),
+      fetchHistory(),
+      fetchStats(),
+    ]);
+  }, [checkAuth, fetchHistory, fetchStats]);
+
+  /*
+   * Connect Socket.IO to the same origin as the frontend.
+   *
+   * Browser:
+   *   http://localhost:8081/socket.io/
+   *
+   * Frontend Nginx proxies it internally to:
+   *   http://backend:5000/socket.io/
+   */
+  useEffect(() => {
+    const socket = io(window.location.origin, {
+      path: '/socket.io',
+      withCredentials: true,
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      timeout: 10000,
     });
 
-    socket.on('new_prediction', (data) => {
-      console.log('Live prediction event received:', data);
-      // Prepend to history
-      setHistory((prev) => {
-        if (prev.some((item) => item.id === data.id)) return prev;
-        return [data, ...prev.slice(0, 5)];
-      });
-      // Increment live statistics counters
-      fetchStats();
+    socket.on('connect', () => {
+      console.info('Connected to the Socket.IO server:', socket.id);
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Socket.IO connection failed:', error.message);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.warn('Socket.IO disconnected:', reason);
+    });
+
+    socket.on('new_prediction', (payload) => {
+      const prediction = payload?.prediction ?? payload;
+
+      if (prediction && typeof prediction === 'object') {
+        setHistory((previousHistory) => {
+          const alreadyExists =
+            prediction.id !== undefined &&
+            previousHistory.some(
+              (item) => item.id === prediction.id,
+            );
+
+          if (alreadyExists) {
+            return previousHistory;
+          }
+
+          return [
+            prediction,
+            ...previousHistory,
+          ].slice(0, 6);
+        });
+      }
+
+      /*
+       * The WebSocket event updates the UI optimistically.
+       * Refetch the backend data to make sure history and statistics match
+       * what was actually persisted in the database.
+       */
+      void refreshDashboard();
     });
 
     return () => {
+      socket.removeAllListeners();
       socket.disconnect();
     };
-  }, []);
+  }, [refreshDashboard]);
 
-  const fetchStats = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/api/v1/predict/stats`);
-      setStats(res.data);
-    } catch (err) {
-      console.error('Failed to load stats', err);
-    }
-  };
+  const handleNewPrediction = useCallback(
+    (result) => {
+      setLastPrediction(result);
 
-  const checkAuth = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/api/v1/auth/me`);
-      setUser(res.data);
-    } catch (err) {
-      setUser(null);
-    }
-  };
+      /*
+       * Do not depend exclusively on the WebSocket event.
+       * Refresh both endpoints after every successful prediction.
+       */
+      void refreshDashboard();
+    },
+    [refreshDashboard],
+  );
 
-  const fetchHistory = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/api/v1/predict/history?limit=6`);
-      setHistory(res.data);
-    } catch (err) {
-      console.error('Failed to load activity history', err);
-    }
-  };
+  const handleAuthSubmit = async (event) => {
+    event.preventDefault();
 
-  const handleNewPrediction = (result) => {
-    setLastPrediction(result);
-    // History list is updated in real-time via WebSockets, but we also refresh just in case
-    fetchHistory();
-  };
-
-  const handleAuthSubmit = async (e) => {
-    e.preventDefault();
     setAuthLoading(true);
     setAuthError('');
+
     try {
-      const endpoint = authModal === 'login' ? 'login' : 'register';
-      const res = await axios.post(`${API_BASE_URL}/api/v1/auth/${endpoint}`, {
-        username,
-        password
+      const endpoint =
+        authModal === 'login'
+          ? '/auth/login'
+          : '/auth/register';
+
+      const response = await api.post(endpoint, {
+        username: username.trim(),
+        password,
       });
-      setUser(res.data.user);
+
+      setUser(normalizeUser(response.data));
       setAuthModal(null);
       setUsername('');
       setPassword('');
-      // Refresh history for the user's specific items
-      fetchHistory();
-    } catch (err) {
-      setAuthError(err.response?.data?.msg || 'Authentication failed. Please try again.');
+
+      await refreshDashboard();
+    } catch (error) {
+      setAuthError(
+        error.response?.data?.msg ||
+          error.response?.data?.message ||
+          'Authentication failed. Please try again.',
+      );
     } finally {
       setAuthLoading(false);
     }
@@ -123,131 +295,248 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/api/v1/auth/logout`);
+      await api.post('/auth/logout');
+
       setUser(null);
-      // Refresh history to show recent public predictions
-      fetchHistory();
-    } catch (err) {
-      console.error('Logout failed', err);
+      setLastPrediction(null);
+
+      await refreshDashboard();
+    } catch (error) {
+      console.error(
+        'Logout failed:',
+        error.response?.data ?? error.message,
+      );
     }
   };
 
-  // Process data for Recharts
-  const getChartData = () => {
-    return [...history].reverse().map((item) => ({
-      name: item.airline,
-      delay: parseFloat(item.delay.toFixed(1)),
-      route: `${item.origin}→${item.destination}`
-    }));
+  const chartData = useMemo(
+    () =>
+      [...history]
+        .reverse()
+        .map((item) => {
+          const delay = Number(item?.delay ?? 0);
+
+          return {
+            name: item?.airline || 'Unknown',
+            delay: Number.isFinite(delay)
+              ? Number(delay.toFixed(1))
+              : 0,
+            route: `${item?.origin || '?'}→${
+              item?.destination || '?'
+            }`,
+          };
+        }),
+    [history],
+  );
+
+  const closeAuthModal = () => {
+    setAuthModal(null);
+    setAuthError('');
+    setPassword('');
   };
 
   return (
-    <div className="relative pt-32 pb-20 px-6 min-h-screen">
-      <Navbar 
-        user={user} 
-        onLogout={handleLogout} 
+    <div className="relative min-h-screen px-6 pb-20 pt-32">
+      <Navbar
+        user={user}
+        onLogout={handleLogout}
         onLoginClick={() => {
           setAuthError('');
           setAuthModal('login');
-        }} 
+        }}
       />
-      
-      <main className="max-w-7xl mx-auto space-y-12">
-        {/* Statistical Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="glass-card p-6 flex flex-col justify-between relative overflow-hidden group hover:border-indigo-500/30 transition-all">
-            <span className="block text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Total AI Predictions</span>
+
+      <main className="mx-auto max-w-7xl space-y-12">
+        {/* Statistical overview */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="glass-card group relative flex flex-col justify-between overflow-hidden p-6 transition-all hover:border-indigo-500/30">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+              Total AI Predictions
+            </span>
+
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-white">{stats.total_predictions}</span>
-              <span className="text-xs text-indigo-400 font-bold">queries</span>
+              <span className="text-4xl font-black text-white">
+                {stats.total_predictions}
+              </span>
+
+              <span className="text-xs font-bold text-indigo-400">
+                queries
+              </span>
             </div>
-            <div className="absolute -bottom-4 -right-4 text-white/5 group-hover:text-indigo-500/5 group-hover:scale-110 transition-all select-none pointer-events-none">
-              <span className="text-8xl font-black leading-none">#</span>
+
+            <div className="pointer-events-none absolute -bottom-4 -right-4 select-none text-white/5 transition-all group-hover:scale-110 group-hover:text-indigo-500/5">
+              <span className="text-8xl font-black leading-none">
+                #
+              </span>
             </div>
           </div>
 
-          <div className="glass-card p-6 flex flex-col justify-between relative overflow-hidden group hover:border-indigo-500/30 transition-all">
-            <span className="block text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Average Arrival Delay</span>
+          <div className="glass-card group relative flex flex-col justify-between overflow-hidden p-6 transition-all hover:border-indigo-500/30">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+              Average Arrival Delay
+            </span>
+
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-white">{stats.average_delay}</span>
-              <span className="text-xs text-indigo-400 font-bold">minutes</span>
+              <span className="text-4xl font-black text-white">
+                {stats.average_delay}
+              </span>
+
+              <span className="text-xs font-bold text-indigo-400">
+                minutes
+              </span>
             </div>
-            <div className="absolute -bottom-4 -right-4 text-white/5 group-hover:text-indigo-500/5 group-hover:scale-110 transition-all select-none pointer-events-none">
-              <span className="text-8xl font-black leading-none">Min</span>
+
+            <div className="pointer-events-none absolute -bottom-4 -right-4 select-none text-white/5 transition-all group-hover:scale-110 group-hover:text-indigo-500/5">
+              <span className="text-8xl font-black leading-none">
+                Min
+              </span>
             </div>
           </div>
 
-          <div className="glass-card p-6 flex flex-col justify-between relative overflow-hidden group hover:border-indigo-500/30 transition-all">
-            <span className="block text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Most Congested Origin</span>
+          <div className="glass-card group relative flex flex-col justify-between overflow-hidden p-6 transition-all hover:border-indigo-500/30">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+              Most Congested Origin
+            </span>
+
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-white uppercase">{stats.most_congested_airport}</span>
-              <span className="text-xs text-indigo-400 font-bold">IATA</span>
+              <span className="text-4xl font-black uppercase text-white">
+                {stats.most_congested_airport}
+              </span>
+
+              <span className="text-xs font-bold text-indigo-400">
+                IATA
+              </span>
             </div>
-            <div className="absolute -bottom-4 -right-4 text-white/5 group-hover:text-indigo-500/5 group-hover:scale-110 transition-all select-none pointer-events-none">
-              <span className="text-8xl font-black leading-none">✈</span>
+
+            <div className="pointer-events-none absolute -bottom-4 -right-4 select-none text-white/5 transition-all group-hover:scale-110 group-hover:text-indigo-500/5">
+              <span className="text-8xl font-black leading-none">
+                ✈
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Side: Form */}
+        {/* Prediction form and history */}
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
           <div className="lg:col-span-7">
             <header className="mb-12">
-              <h1 className="text-5xl font-black mb-4 tracking-tight leading-tight">
-                Predict Flight Delays with <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-400">
+              <h1 className="mb-4 text-5xl font-black leading-tight tracking-tight">
+                Predict Flight Delays with
+                <br />
+
+                <span className="bg-gradient-to-r from-indigo-500 to-purple-400 bg-clip-text text-transparent">
                   AI Precision.
                 </span>
               </h1>
-              <p className="text-slate-400 text-lg max-w-xl">
-                Utilize our advanced neural forecasting engine to analyze congestion, 
-                weather patterns, and historical trends in real-time.
+
+              <p className="max-w-xl text-lg text-slate-400">
+                Utilize our advanced neural forecasting engine to
+                analyze congestion, weather patterns and historical
+                trends in real time.
               </p>
             </header>
-            
-            <PredictionForm onNewPrediction={handleNewPrediction} />
+
+            <PredictionForm
+              onNewPrediction={handleNewPrediction}
+            />
           </div>
 
-          {/* Right Side: History */}
-          <div className="lg:col-span-5 h-full">
+          <div className="h-full lg:col-span-5">
             <HistoryList history={history} />
           </div>
         </div>
 
-        {/* Real-time Analytics Visualisation */}
-        {history.length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+        {/* Analytics chart */}
+        {chartData.length > 0 && (
+          <motion.div
+            initial={{
+              opacity: 0,
+              y: 30,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
             className="glass-card p-8"
           >
-            <h2 className="text-xl font-bold mb-6 text-slate-100 flex items-center gap-2">
-              <span className="inline-block w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
+            <h2 className="mb-6 flex items-center gap-2 text-xl font-bold text-slate-100">
+              <span className="inline-block h-2.5 w-2.5 animate-ping rounded-full bg-emerald-500" />
               Live Prediction Analytics Timeline
             </h2>
+
             <div className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={getChartData()} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <AreaChart
+                  data={chartData}
+                  margin={{
+                    top: 10,
+                    right: 30,
+                    left: 0,
+                    bottom: 0,
+                  }}
+                >
                   <defs>
-                    <linearGradient id="colorDelay" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0}/>
+                    <linearGradient
+                      id="colorDelay"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="5%"
+                        stopColor="#6366f1"
+                        stopOpacity={0.4}
+                      />
+
+                      <stop
+                        offset="95%"
+                        stopColor="#6366f1"
+                        stopOpacity={0}
+                      />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#64748b" fontSize={11} tickLine={false} unit="m" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#0f172a', 
-                      borderColor: 'rgba(255,255,255,0.1)', 
-                      borderRadius: '12px',
-                      color: '#f8fafc'
-                    }}
-                    formatter={(value, name, props) => [`${value} minutes`, `Delay (${props.payload.route})`]}
+
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255,255,255,0.05)"
                   />
-                  <Area type="monotone" dataKey="delay" stroke="#818cf8" strokeWidth={2.5} fillOpacity={1} fill="url(#colorDelay)" />
+
+                  <XAxis
+                    dataKey="name"
+                    stroke="#64748b"
+                    fontSize={11}
+                    tickLine={false}
+                  />
+
+                  <YAxis
+                    stroke="#64748b"
+                    fontSize={11}
+                    tickLine={false}
+                    unit="m"
+                  />
+
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#0f172a',
+                      borderColor: 'rgba(255,255,255,0.1)',
+                      borderRadius: '12px',
+                      color: '#f8fafc',
+                    }}
+                    formatter={(value, name, properties) => [
+                      `${value} minutes`,
+                      `Delay (${properties.payload.route})`,
+                    ]}
+                  />
+
+                  <Area
+                    type="monotone"
+                    dataKey="delay"
+                    stroke="#818cf8"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#colorDelay)"
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -255,83 +544,168 @@ export default function App() {
         )}
       </main>
 
-      {/* Result Modal */}
+      {/* Prediction result modal */}
       <AnimatePresence>
         {lastPrediction && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card max-w-md w-full p-10 relative overflow-hidden"
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-6 backdrop-blur-sm">
+            <motion.div
+              initial={{
+                scale: 0.9,
+                opacity: 0,
+              }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+              }}
+              exit={{
+                scale: 0.9,
+                opacity: 0,
+              }}
+              className="glass-card relative w-full max-w-md overflow-hidden p-10"
             >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500" />
-              <button 
+              <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-indigo-500 to-purple-500" />
+
+              <button
+                type="button"
+                aria-label="Close prediction result"
                 onClick={() => setLastPrediction(null)}
-                className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors cursor-pointer"
+                className="absolute right-4 top-4 cursor-pointer text-slate-500 transition-colors hover:text-white"
               >
-                <X className="w-5 h-5" />
+                <X className="h-5 w-5" />
               </button>
 
               <div className="flex flex-col items-center text-center">
-                <div className="bg-emerald-500/10 p-3 rounded-full mb-6">
-                  <CheckCircle2 className="text-emerald-500 w-10 h-10" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Analysis Complete</h3>
-                <h2 className="text-2xl font-black mb-8">Estimated Arrival Delay</h2>
-                
-                <div className="flex items-baseline gap-2 mb-8">
-                  <span className="text-7xl font-black text-white">{lastPrediction.delay.toFixed(1)}</span>
-                  <span className="text-xl font-bold text-indigo-400">min</span>
+                <div className="mb-6 rounded-full bg-emerald-500/10 p-3">
+                  <CheckCircle2 className="h-10 w-10 text-emerald-500" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 w-full">
-                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <span className="block text-[10px] text-slate-500 uppercase font-bold mb-1">Reliability</span>
-                    <span className="text-emerald-400 font-bold">High ({(lastPrediction.confidence * 100).toFixed(0)}%)</span>
+                <h3 className="mb-2 text-sm font-bold uppercase tracking-widest text-slate-400">
+                  Analysis Complete
+                </h3>
+
+                <h2 className="mb-8 text-2xl font-black">
+                  Estimated Arrival Delay
+                </h2>
+
+                <div className="mb-8 flex items-baseline gap-2">
+                  <span className="text-7xl font-black text-white">
+                    {Number(
+                      lastPrediction.delay ?? 0,
+                    ).toFixed(1)}
+                  </span>
+
+                  <span className="text-xl font-bold text-indigo-400">
+                    min
+                  </span>
+                </div>
+
+                <div className="grid w-full grid-cols-2 gap-4">
+                  <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                    <span className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
+                      Reliability
+                    </span>
+
+                    <span className="font-bold text-emerald-400">
+                      High (
+                      {(
+                        Number(
+                          lastPrediction.confidence ?? 0,
+                        ) * 100
+                      ).toFixed(0)}
+                      %)
+                    </span>
                   </div>
-                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <span className="block text-[10px] text-slate-500 uppercase font-bold mb-1">Weather</span>
-                    <span className="text-white font-bold">{lastPrediction.weather.temp}°C</span>
+
+                  <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                    <span className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
+                      Weather
+                    </span>
+
+                    <span className="font-bold text-white">
+                      {lastPrediction.weather?.temp ?? 'N/A'}°C
+                    </span>
                   </div>
                 </div>
 
-                {/* Explainable AI (SHAP) Contribution Bars */}
-                {lastPrediction.shap_contributions && Object.keys(lastPrediction.shap_contributions).length > 0 && (
-                  <div className="w-full mt-6 text-left space-y-3 bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <span className="block text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">AI Feature Influence (SHAP)</span>
-                    {Object.entries(lastPrediction.shap_contributions).map(([feature, val]) => {
-                      const isPositive = val >= 0;
-                      const formattedVal = val.toFixed(1);
-                      const absPercent = Math.min(100, Math.abs(val) * 10);
-                      const displayName = feature
-                        .replace('flight_duration', 'Duration')
-                        .replace('congestion', 'Congestion')
-                        .replace('temperature', 'Temperature')
-                        .replace('humidity', 'Humidity');
-                      return (
-                        <div key={feature} className="space-y-1">
-                          <div className="flex justify-between text-xs font-semibold">
-                            <span className="text-slate-300">{displayName}</span>
-                            <span className={isPositive ? 'text-rose-400' : 'text-emerald-400'}>
-                              {isPositive ? '+' : ''}{formattedVal}m
-                            </span>
+                {lastPrediction.shap_contributions &&
+                  Object.keys(
+                    lastPrediction.shap_contributions,
+                  ).length > 0 && (
+                    <div className="mt-6 w-full space-y-3 rounded-2xl border border-white/5 bg-white/5 p-4 text-left">
+                      <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        AI Feature Influence (SHAP)
+                      </span>
+
+                      {Object.entries(
+                        lastPrediction.shap_contributions,
+                      ).map(([feature, rawValue]) => {
+                        const value = Number(rawValue ?? 0);
+                        const isPositive = value >= 0;
+                        const formattedValue = value.toFixed(1);
+                        const absolutePercentage = Math.min(
+                          100,
+                          Math.abs(value) * 10,
+                        );
+
+                        const displayName = feature
+                          .replace(
+                            'flight_duration',
+                            'Duration',
+                          )
+                          .replace(
+                            'congestion',
+                            'Congestion',
+                          )
+                          .replace(
+                            'temperature',
+                            'Temperature',
+                          )
+                          .replace('humidity', 'Humidity');
+
+                        return (
+                          <div
+                            key={feature}
+                            className="space-y-1"
+                          >
+                            <div className="flex justify-between text-xs font-semibold">
+                              <span className="text-slate-300">
+                                {displayName}
+                              </span>
+
+                              <span
+                                className={
+                                  isPositive
+                                    ? 'text-rose-400'
+                                    : 'text-emerald-400'
+                                }
+                              >
+                                {isPositive ? '+' : ''}
+                                {formattedValue}m
+                              </span>
+                            </div>
+
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-950">
+                              <div
+                                className={`h-full rounded-full ${
+                                  isPositive
+                                    ? 'bg-gradient-to-r from-rose-500 to-red-400'
+                                    : 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                                }`}
+                                style={{
+                                  width: `${absolutePercentage}%`,
+                                }}
+                              />
+                            </div>
                           </div>
-                          <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full rounded-full ${isPositive ? 'bg-gradient-to-r from-rose-500 to-red-400' : 'bg-gradient-to-r from-emerald-500 to-teal-400'}`}
-                              style={{ width: `${absPercent}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
 
-                <button 
+                <button
+                  type="button"
                   onClick={() => setLastPrediction(null)}
-                  className="w-full bg-white text-slate-950 font-bold py-4 rounded-2xl mt-6 hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="mt-6 w-full cursor-pointer rounded-2xl bg-white py-4 font-bold text-slate-950 transition-colors hover:bg-slate-200"
                 >
                   Confirm & Close
                 </button>
@@ -341,74 +715,123 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Authentication Modal */}
+      {/* Authentication modal */}
       <AnimatePresence>
         {authModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-6 backdrop-blur-sm">
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="glass-card max-w-sm w-full p-8 relative overflow-hidden"
+              initial={{
+                scale: 0.95,
+                opacity: 0,
+              }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+              }}
+              exit={{
+                scale: 0.95,
+                opacity: 0,
+              }}
+              className="glass-card relative w-full max-w-sm overflow-hidden p-8"
             >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500" />
-              <button 
-                onClick={() => setAuthModal(null)}
-                className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors cursor-pointer"
+              <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-indigo-500 to-purple-500" />
+
+              <button
+                type="button"
+                aria-label="Close authentication modal"
+                onClick={closeAuthModal}
+                className="absolute right-4 top-4 cursor-pointer text-slate-500 transition-colors hover:text-white"
               >
-                <X className="w-5 h-5" />
+                <X className="h-5 w-5" />
               </button>
 
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold mb-1">
-                  {authModal === 'login' ? 'Sign In' : 'Create Account'}
+              <div className="mb-6 text-center">
+                <h2 className="mb-1 text-2xl font-bold">
+                  {authModal === 'login'
+                    ? 'Sign In'
+                    : 'Create Account'}
                 </h2>
+
                 <p className="text-xs text-slate-400">
-                  {authModal === 'login' ? 'Access your flight prediction records' : 'Register a new user account'}
+                  {authModal === 'login'
+                    ? 'Access your flight prediction records'
+                    : 'Register a new user account'}
                 </p>
               </div>
 
               {authError && (
-                <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl flex items-center gap-2 text-xs">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
+                <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
                   <span>{authError}</span>
                 </div>
               )}
 
-              <form onSubmit={handleAuthSubmit} className="space-y-4">
+              <form
+                onSubmit={handleAuthSubmit}
+                className="space-y-4"
+              >
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
-                    <User className="w-3 h-3" /> Username
+                  <label
+                    htmlFor="username"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-slate-400"
+                  >
+                    <User className="h-3 w-3" />
+                    Username
                   </label>
-                  <input 
-                    type="text" required
+
+                  <input
+                    id="username"
+                    type="text"
+                    required
+                    autoComplete="username"
                     className="glass-input w-full text-sm"
                     placeholder="e.g. ganesh"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(event) =>
+                      setUsername(event.target.value)
+                    }
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
-                    <Lock className="w-3 h-3" /> Password
+                  <label
+                    htmlFor="password"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-slate-400"
+                  >
+                    <Lock className="h-3 w-3" />
+                    Password
                   </label>
-                  <input 
-                    type="password" required
+
+                  <input
+                    id="password"
+                    type="password"
+                    required
+                    autoComplete={
+                      authModal === 'login'
+                        ? 'current-password'
+                        : 'new-password'
+                    }
                     className="glass-input w-full text-sm"
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(event) =>
+                      setPassword(event.target.value)
+                    }
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={authLoading}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer text-sm shadow-lg shadow-indigo-500/10"
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-bold shadow-lg shadow-indigo-500/10 transition-all hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {authLoading ? <Loader2 className="animate-spin w-4 h-4" /> : null}
-                  {authModal === 'login' ? 'Sign In' : 'Sign Up'}
+                  {authLoading && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+
+                  {authModal === 'login'
+                    ? 'Sign In'
+                    : 'Sign Up'}
                 </button>
               </form>
 
@@ -416,12 +839,13 @@ export default function App() {
                 {authModal === 'login' ? (
                   <span>
                     New to the system?{' '}
-                    <button 
+                    <button
+                      type="button"
                       onClick={() => {
                         setAuthError('');
                         setAuthModal('register');
                       }}
-                      className="text-indigo-400 hover:underline font-semibold cursor-pointer"
+                      className="cursor-pointer font-semibold text-indigo-400 hover:underline"
                     >
                       Sign Up
                     </button>
@@ -429,12 +853,13 @@ export default function App() {
                 ) : (
                   <span>
                     Already have an account?{' '}
-                    <button 
+                    <button
+                      type="button"
                       onClick={() => {
                         setAuthError('');
                         setAuthModal('login');
                       }}
-                      className="text-indigo-400 hover:underline font-semibold cursor-pointer"
+                      className="cursor-pointer font-semibold text-indigo-400 hover:underline"
                     >
                       Sign In
                     </button>
@@ -448,4 +873,3 @@ export default function App() {
     </div>
   );
 }
-
