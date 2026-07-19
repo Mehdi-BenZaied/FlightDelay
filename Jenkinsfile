@@ -7,13 +7,13 @@ pipeline {
         booleanParam(
             name: 'PUBLISH_IMAGES',
             defaultValue: false,
-            description: 'Push the backend and frontend images to Docker Hub'
+            description: 'Push validated images to Docker Hub'
         )
 
         booleanParam(
-            name: 'DEPLOY_LOCALLY',
+            name: 'DEPLOY_KUBERNETES',
             defaultValue: false,
-            description: 'Deploy the application locally after successful tests'
+            description: 'Deploy FlightDelay to kind with Helm'
         )
     }
 
@@ -21,15 +21,11 @@ pipeline {
         skipDefaultCheckout(true)
         disableConcurrentBuilds()
         timestamps()
-
-        timeout(
-            time: 45,
-            unit: 'MINUTES'
-        )
-
+        timeout(time: 60, unit: 'MINUTES')
         buildDiscarder(
             logRotator(
-                numToKeepStr: '15'
+                numToKeepStr: '15',
+                artifactNumToKeepStr: '10'
             )
         )
     }
@@ -38,17 +34,26 @@ pipeline {
         FRONTEND_IMAGE = 'mehdibenzaied/flight-delay-frontend'
         BACKEND_IMAGE  = 'mehdibenzaied/flight-delay-backend'
 
-        // Only required when PUBLISH_IMAGES is enabled.
-        REGISTRY_CREDENTIALS = 'DockerHub'
+        REGISTRY_CREDENTIALS   = 'DockerHub'
+        KUBECONFIG_CREDENTIALS = 'kind-flight-delay-kubeconfig'
 
         COMPOSE_FILE = 'docker-compose.yml'
 
-        // Name used for the persistent local deployment.
-        PROD_PROJECT = 'flight-delay-prod'
+        HELM_CHART   = 'deploy/helm/flight-delay'
+        HELM_VALUES  = 'deploy/helm/flight-delay/values-dev.yaml'
+        HELM_RELEASE = 'flight-delay-dev'
+
+        KUBE_CONTEXT  = 'kind-flight-delay'
+        K8S_NAMESPACE = 'flight-delay-helm'
+
+        K8S_FRONTEND_URL  = 'http://localhost:8081'
+        K8S_ANALYTICS_URL = 'http://localhost:8051'
+
+        DOCKER_BUILDKIT = '1'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout and Metadata') {
             steps {
                 checkout scm
 
@@ -79,7 +84,6 @@ pipeline {
                     }
 
                     env.SOURCE_BRANCH = rawBranch
-
                     env.SAFE_BRANCH = rawBranch
                         .toLowerCase()
                         .replaceAll('[^a-z0-9_.-]', '-')
@@ -100,30 +104,50 @@ pipeline {
                         "#${env.BUILD_NUMBER} ${env.IMAGE_TAG}"
                 }
 
-                echo """
-==================================================
-FlightDelay build information
-==================================================
-Branch:          ${env.SOURCE_BRANCH}
-Commit:          ${env.SHORT_SHA}
-Image tag:       ${env.IMAGE_TAG}
-Frontend image:  ${env.FRONTEND_REF}
-Backend image:   ${env.BACKEND_REF}
-Compose project: ${env.CI_PROJECT}
-==================================================
-"""
+                echo "Branch: ${env.SOURCE_BRANCH}"
+                echo "Commit: ${env.SHORT_SHA}"
+                echo "Image tag: ${env.IMAGE_TAG}"
+                echo "Helm release: ${env.HELM_RELEASE}"
+                echo "Namespace: ${env.K8S_NAMESPACE}"
+                echo "Kube context: ${env.KUBE_CONTEXT}"
             }
         }
 
-        stage('Validate Project') {
+        stage('Validate Parameters') {
+            steps {
+                script {
+                    if (params.DEPLOY_KUBERNETES && !params.PUBLISH_IMAGES) {
+                        error(
+                            'DEPLOY_KUBERNETES requires PUBLISH_IMAGES=true.'
+                        )
+                    }
+
+                    if (
+                        params.DEPLOY_KUBERNETES &&
+                        env.SOURCE_BRANCH != 'main'
+                    ) {
+                        error(
+                            'Kubernetes deployment is allowed only from main.'
+                        )
+                    }
+                }
+            }
+        }
+
+        stage('Validate Agent and Project') {
             steps {
                 sh '''
                     set -eu
 
-                    echo "Checking required project files..."
+                    command -v git
+                    command -v docker
+                    docker compose version
+                    command -v curl
+                    command -v kubectl
+                    command -v helm
 
                     test -f Jenkinsfile
-                    test -f docker-compose.yml
+                    test -f "$COMPOSE_FILE"
 
                     test -f backend/Dockerfile
                     test -f backend/requirements.txt
@@ -139,42 +163,71 @@ Compose project: ${env.CI_PROJECT}
                     test -f ml/models/v1_model.json
                     test -f data/flight_data.csv
 
-                    echo "All required files are present."
+                    test -f "$HELM_CHART/Chart.yaml"
+                    test -f "$HELM_CHART/values.yaml"
+                    test -f "$HELM_VALUES"
+                    test -d "$HELM_CHART/templates"
+
+                    echo "Agent and project validation succeeded."
                 '''
             }
         }
 
-        stage('Validate Compose') {
+        stage('Validate Docker Compose') {
             steps {
                 sh '''
                     set -eu
 
                     export FRONTEND_REF
                     export BACKEND_REF
-
                     export BACKEND_HOST_PORT=5000
                     export FRONTEND_HOST_PORT=5173
                     export ANALYTICS_HOST_PORT=8050
 
-                    echo "Validating Docker Compose configuration..."
-
                     docker compose \
                       --file "$COMPOSE_FILE" \
                       config --quiet
-
-                    echo "Docker Compose configuration is valid."
                 '''
             }
         }
 
-        stage('Build Images') {
+        stage('Validate Helm Chart') {
+            steps {
+                sh '''
+                    set -eu
+
+                    helm lint "$HELM_CHART" \
+                      --values "$HELM_VALUES"
+
+                    helm template "$HELM_RELEASE" \
+                      "$HELM_CHART" \
+                      --namespace "$K8S_NAMESPACE" \
+                      --values "$HELM_VALUES" \
+                      --set-string frontend.image.repository="$FRONTEND_IMAGE" \
+                      --set-string frontend.image.tag="$IMAGE_TAG" \
+                      --set-string backend.image.repository="$BACKEND_IMAGE" \
+                      --set-string backend.image.tag="$IMAGE_TAG" \
+                      --set-string analytics.image.repository="$BACKEND_IMAGE" \
+                      --set-string analytics.image.tag="$IMAGE_TAG" \
+                      > flight-delay-rendered.yaml
+
+                    test -s flight-delay-rendered.yaml
+                    grep 'image:' flight-delay-rendered.yaml || true
+                '''
+
+                archiveArtifacts(
+                    artifacts: 'flight-delay-rendered.yaml',
+                    fingerprint: true
+                )
+            }
+        }
+
+        stage('Build Docker Images') {
             parallel {
                 stage('Build Frontend') {
                     steps {
                         sh '''
                             set -eu
-
-                            echo "Building frontend image: $FRONTEND_REF"
 
                             docker build \
                               --pull \
@@ -183,8 +236,6 @@ Compose project: ${env.CI_PROJECT}
                               --file frontend/Dockerfile \
                               --tag "$FRONTEND_REF" \
                               frontend
-
-                            echo "Frontend image built successfully."
                         '''
                     }
                 }
@@ -194,8 +245,6 @@ Compose project: ${env.CI_PROJECT}
                         sh '''
                             set -eu
 
-                            echo "Building backend image: $BACKEND_REF"
-
                             docker build \
                               --pull \
                               --progress=plain \
@@ -203,20 +252,16 @@ Compose project: ${env.CI_PROJECT}
                               --file backend/Dockerfile \
                               --tag "$BACKEND_REF" \
                               .
-
-                            echo "Backend image built successfully."
                         '''
                     }
                 }
             }
         }
 
-        stage('Inspect Images') {
+        stage('Inspect Docker Images') {
             steps {
                 sh '''
                     set -eu
-
-                    echo "Inspecting generated images..."
 
                     docker image inspect \
                       "$FRONTEND_REF" \
@@ -229,7 +274,7 @@ Compose project: ${env.CI_PROJECT}
             }
         }
 
-        stage('Compose Integration Test') {
+        stage('Docker Compose Integration Tests') {
             steps {
                 sh '''
                     set -eu
@@ -237,13 +282,9 @@ Compose project: ${env.CI_PROJECT}
 
                     export FRONTEND_REF
                     export BACKEND_REF
-
-                    # Docker assigns random available host ports.
                     export BACKEND_HOST_PORT=0
                     export FRONTEND_HOST_PORT=0
                     export ANALYTICS_HOST_PORT=0
-
-                    echo "Starting temporary integration environment..."
 
                     docker compose \
                       --project-name "$CI_PROJECT" \
@@ -254,16 +295,10 @@ Compose project: ${env.CI_PROJECT}
                       --wait-timeout 300 \
                       --no-build
 
-                    echo
-                    echo "Container status:"
-
                     docker compose \
                       --project-name "$CI_PROJECT" \
                       --file "$COMPOSE_FILE" \
                       ps
-
-                    echo
-                    echo "Testing Redis..."
 
                     docker compose \
                       --project-name "$CI_PROJECT" \
@@ -271,11 +306,6 @@ Compose project: ${env.CI_PROJECT}
                       exec -T redis \
                       redis-cli ping |
                       grep --quiet '^PONG$'
-
-                    echo "Redis test succeeded."
-
-                    echo
-                    echo "Testing backend health endpoint..."
 
                     docker compose \
                       --project-name "$CI_PROJECT" \
@@ -286,12 +316,6 @@ Compose project: ${env.CI_PROJECT}
                         --silent \
                         --show-error \
                         http://127.0.0.1:5000/health
-
-                    echo
-                    echo "Backend health test succeeded."
-
-                    echo
-                    echo "Testing frontend health endpoint..."
 
                     docker compose \
                       --project-name "$CI_PROJECT" \
@@ -304,11 +328,6 @@ Compose project: ${env.CI_PROJECT}
                         http://127.0.0.1/health |
                       grep --quiet '^ok$'
 
-                    echo "Frontend health test succeeded."
-
-                    echo
-                    echo "Testing frontend React page..."
-
                     docker compose \
                       --project-name "$CI_PROJECT" \
                       --file "$COMPOSE_FILE" \
@@ -318,11 +337,6 @@ Compose project: ${env.CI_PROJECT}
                         --tries=1 \
                         --output-document=/dev/null \
                         http://127.0.0.1/
-
-                    echo "Frontend page test succeeded."
-
-                    echo
-                    echo "Testing analytics dashboard..."
 
                     docker compose \
                       --project-name "$CI_PROJECT" \
@@ -335,32 +349,11 @@ Compose project: ${env.CI_PROJECT}
                         --output /dev/null \
                         http://127.0.0.1:8050/
 
-                    echo "Analytics dashboard test succeeded."
-
-                    echo
-                    echo "Checking frontend build output..."
-
-                    docker compose \
-                      --project-name "$CI_PROJECT" \
-                      --file "$COMPOSE_FILE" \
-                      exec -T frontend \
-                      test -f /usr/share/nginx/html/index.html
-
-                    echo "Frontend index.html exists."
-
-                    echo
-                    echo "Checking prediction model..."
-
                     docker compose \
                       --project-name "$CI_PROJECT" \
                       --file "$COMPOSE_FILE" \
                       exec -T backend \
                       test -f /app/ml/models/v1_model.json
-
-                    echo "Prediction model exists."
-
-                    echo
-                    echo "Checking analytics dataset..."
 
                     docker compose \
                       --project-name "$CI_PROJECT" \
@@ -368,39 +361,11 @@ Compose project: ${env.CI_PROJECT}
                       exec -T analytics \
                       test -f /app/datasets/flight_data.csv
 
-                    echo "Analytics dataset exists."
-
-                    echo
-                    echo "Checking backend configuration import..."
-
-                    docker compose \
-                      --project-name "$CI_PROJECT" \
-                      --file "$COMPOSE_FILE" \
-                      exec -T backend \
-                      python -c "from app.core.config import settings; print('Configuration import succeeded')"
-
-                    echo
-                    echo "Checking PredictionService import..."
-
                     docker compose \
                       --project-name "$CI_PROJECT" \
                       --file "$COMPOSE_FILE" \
                       exec -T backend \
                       python -c "from app.services.prediction_service import PredictionService; print('PredictionService import succeeded')"
-
-                    echo
-                    echo "Checking PredictionService methods..."
-
-                    docker compose \
-                      --project-name "$CI_PROJECT" \
-                      --file "$COMPOSE_FILE" \
-                      exec -T backend \
-                      python -c "from app.services.prediction_service import PredictionService; methods = ('get_prediction', 'get_history', 'fetch_weather'); missing = [method for method in methods if not hasattr(PredictionService, method)]; assert not missing, f'Missing PredictionService methods: {missing}'; print('PredictionService methods validated successfully')"
-
-                    echo
-                    echo "=================================================="
-                    echo "All integration tests succeeded."
-                    echo "=================================================="
                 '''
             }
 
@@ -412,28 +377,14 @@ Compose project: ${env.CI_PROJECT}
 
                         export FRONTEND_REF
                         export BACKEND_REF
-
                         export BACKEND_HOST_PORT=0
                         export FRONTEND_HOST_PORT=0
                         export ANALYTICS_HOST_PORT=0
-
-                        echo
-                        echo "=================================================="
-                        echo "Integration test failed"
-                        echo "=================================================="
-
-                        echo
-                        echo "Container status:"
 
                         docker compose \
                           --project-name "$CI_PROJECT" \
                           --file "$COMPOSE_FILE" \
                           ps --all || true
-
-                        echo
-                        echo "=================================================="
-                        echo "Container logs"
-                        echo "=================================================="
 
                         docker compose \
                           --project-name "$CI_PROJECT" \
@@ -441,79 +392,6 @@ Compose project: ${env.CI_PROJECT}
                           logs \
                           --no-color \
                           --timestamps || true
-
-                        for service in redis backend analytics frontend
-                        do
-                            echo
-                            echo "=================================================="
-                            echo "Inspecting service: $service"
-                            echo "=================================================="
-
-                            CONTAINER_ID="$(
-                                docker compose \
-                                  --project-name "$CI_PROJECT" \
-                                  --file "$COMPOSE_FILE" \
-                                  ps --quiet "$service"
-                            )"
-
-                            if [ -n "$CONTAINER_ID" ]; then
-                                docker inspect \
-                                  --format='Container: {{.Name}}' \
-                                  "$CONTAINER_ID" || true
-
-                                docker inspect \
-                                  --format='Status: {{.State.Status}}' \
-                                  "$CONTAINER_ID" || true
-
-                                docker inspect \
-                                  --format='Exit code: {{.State.ExitCode}}' \
-                                  "$CONTAINER_ID" || true
-
-                                docker inspect \
-                                  --format='Health: {{json .State.Health}}' \
-                                  "$CONTAINER_ID" || true
-                            else
-                                echo "No container found for service: $service"
-                            fi
-                        done
-
-                        echo
-                        echo "=================================================="
-                        echo "Frontend files"
-                        echo "=================================================="
-
-                        docker compose \
-                          --project-name "$CI_PROJECT" \
-                          --file "$COMPOSE_FILE" \
-                          exec -T frontend \
-                          ls -la /usr/share/nginx/html || true
-
-                        echo
-                        echo "=================================================="
-                        echo "Frontend health request"
-                        echo "=================================================="
-
-                        docker compose \
-                          --project-name "$CI_PROJECT" \
-                          --file "$COMPOSE_FILE" \
-                          exec -T frontend \
-                          wget \
-                            --server-response \
-                            --output-document=- \
-                            http://127.0.0.1/health || true
-
-                        echo
-                        echo "=================================================="
-                        echo "Backend health request"
-                        echo "=================================================="
-
-                        docker compose \
-                          --project-name "$CI_PROJECT" \
-                          --file "$COMPOSE_FILE" \
-                          exec -T backend \
-                          curl \
-                            --verbose \
-                            http://127.0.0.1:5000/health || true
                     '''
                 }
 
@@ -524,13 +402,9 @@ Compose project: ${env.CI_PROJECT}
 
                         export FRONTEND_REF
                         export BACKEND_REF
-
                         export BACKEND_HOST_PORT=0
                         export FRONTEND_HOST_PORT=0
                         export ANALYTICS_HOST_PORT=0
-
-                        echo
-                        echo "Removing temporary integration environment..."
 
                         docker compose \
                           --project-name "$CI_PROJECT" \
@@ -543,7 +417,7 @@ Compose project: ${env.CI_PROJECT}
             }
         }
 
-        stage('Publish Images') {
+        stage('Publish Docker Images') {
             when {
                 expression {
                     params.PUBLISH_IMAGES &&
@@ -573,12 +447,8 @@ Compose project: ${env.CI_PROJECT}
                             --username "$REGISTRY_USER" \
                             --password-stdin
 
-                        echo "Pushing immutable image tags..."
-
                         docker push "$FRONTEND_REF"
                         docker push "$BACKEND_REF"
-
-                        echo "Creating branch-specific latest tags..."
 
                         docker tag \
                           "$FRONTEND_REF" \
@@ -588,15 +458,10 @@ Compose project: ${env.CI_PROJECT}
                           "$BACKEND_REF" \
                           "$BACKEND_IMAGE:$SAFE_BRANCH-latest"
 
-                        docker push \
-                          "$FRONTEND_IMAGE:$SAFE_BRANCH-latest"
-
-                        docker push \
-                          "$BACKEND_IMAGE:$SAFE_BRANCH-latest"
+                        docker push "$FRONTEND_IMAGE:$SAFE_BRANCH-latest"
+                        docker push "$BACKEND_IMAGE:$SAFE_BRANCH-latest"
 
                         if [ "$SOURCE_BRANCH" = "main" ]; then
-                            echo "Creating latest tags..."
-
                             docker tag \
                               "$FRONTEND_REF" \
                               "$FRONTEND_IMAGE:latest"
@@ -608,17 +473,266 @@ Compose project: ${env.CI_PROJECT}
                             docker push "$FRONTEND_IMAGE:latest"
                             docker push "$BACKEND_IMAGE:latest"
                         fi
-
-                        echo "Docker images published successfully."
                     '''
                 }
             }
         }
 
-        stage('Deploy Locally') {
+        stage('Check Kubernetes Access') {
             when {
                 expression {
-                    params.DEPLOY_LOCALLY &&
+                    params.DEPLOY_KUBERNETES &&
+                    params.PUBLISH_IMAGES &&
+                    env.SOURCE_BRANCH == 'main'
+                }
+            }
+
+            steps {
+                withCredentials([
+                    file(
+                        credentialsId: env.KUBECONFIG_CREDENTIALS,
+                        variable: 'KUBECONFIG'
+                    )
+                ]) {
+                    sh '''
+                        set -eu
+
+                        kubectl \
+                          --context "$KUBE_CONTEXT" \
+                          cluster-info
+
+                        kubectl \
+                          --context "$KUBE_CONTEXT" \
+                          get nodes -o wide
+
+                        kubectl \
+                          --context "$KUBE_CONTEXT" \
+                          wait \
+                          --for=condition=Ready \
+                          node \
+                          --all \
+                          --timeout=120s
+                    '''
+                }
+            }
+        }
+
+        stage('Prepare Namespace and Registry Secret') {
+            when {
+                expression {
+                    params.DEPLOY_KUBERNETES &&
+                    params.PUBLISH_IMAGES &&
+                    env.SOURCE_BRANCH == 'main'
+                }
+            }
+
+            steps {
+                withCredentials([
+                    file(
+                        credentialsId: env.KUBECONFIG_CREDENTIALS,
+                        variable: 'KUBECONFIG'
+                    ),
+                    usernamePassword(
+                        credentialsId: env.REGISTRY_CREDENTIALS,
+                        usernameVariable: 'REGISTRY_USER',
+                        passwordVariable: 'REGISTRY_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                        set -eu
+                        set +x
+
+                        if ! kubectl \
+                          --context "$KUBE_CONTEXT" \
+                          get namespace "$K8S_NAMESPACE" \
+                          >/dev/null 2>&1
+                        then
+                            kubectl \
+                              --context "$KUBE_CONTEXT" \
+                              create namespace "$K8S_NAMESPACE"
+                        fi
+
+                        kubectl \
+                          --context "$KUBE_CONTEXT" \
+                          --namespace "$K8S_NAMESPACE" \
+                          delete secret dockerhub-credentials \
+                          --ignore-not-found=true
+
+                        kubectl \
+                          --context "$KUBE_CONTEXT" \
+                          --namespace "$K8S_NAMESPACE" \
+                          create secret docker-registry dockerhub-credentials \
+                          --docker-server=https://index.docker.io/v1/ \
+                          --docker-username="$REGISTRY_USER" \
+                          --docker-password="$REGISTRY_TOKEN"
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy with Helm') {
+            when {
+                expression {
+                    params.DEPLOY_KUBERNETES &&
+                    params.PUBLISH_IMAGES &&
+                    env.SOURCE_BRANCH == 'main'
+                }
+            }
+
+            steps {
+                withCredentials([
+                    file(
+                        credentialsId: env.KUBECONFIG_CREDENTIALS,
+                        variable: 'KUBECONFIG'
+                    )
+                ]) {
+                    sh '''
+                        set -eu
+
+                        helm upgrade --install "$HELM_RELEASE" \
+                          "$HELM_CHART" \
+                          --kube-context "$KUBE_CONTEXT" \
+                          --namespace "$K8S_NAMESPACE" \
+                          --create-namespace \
+                          --values "$HELM_VALUES" \
+                          --set-string frontend.image.repository="$FRONTEND_IMAGE" \
+                          --set-string frontend.image.tag="$IMAGE_TAG" \
+                          --set-string backend.image.repository="$BACKEND_IMAGE" \
+                          --set-string backend.image.tag="$IMAGE_TAG" \
+                          --set-string analytics.image.repository="$BACKEND_IMAGE" \
+                          --set-string analytics.image.tag="$IMAGE_TAG" \
+                          --history-max 10 \
+                          --atomic \
+                          --timeout 10m
+                    '''
+                }
+            }
+
+            post {
+                unsuccessful {
+                    withCredentials([
+                        file(
+                            credentialsId: env.KUBECONFIG_CREDENTIALS,
+                            variable: 'KUBECONFIG'
+                        )
+                    ]) {
+                        sh '''
+                            set +e
+
+                            helm status "$HELM_RELEASE" \
+                              --kube-context "$KUBE_CONTEXT" \
+                              --namespace "$K8S_NAMESPACE" || true
+
+                            kubectl \
+                              --context "$KUBE_CONTEXT" \
+                              --namespace "$K8S_NAMESPACE" \
+                              get pods -o wide || true
+
+                            kubectl \
+                              --context "$KUBE_CONTEXT" \
+                              --namespace "$K8S_NAMESPACE" \
+                              get deployments,services,pvc || true
+
+                            kubectl \
+                              --context "$KUBE_CONTEXT" \
+                              --namespace "$K8S_NAMESPACE" \
+                              get events \
+                              --sort-by=.metadata.creationTimestamp || true
+
+                            kubectl \
+                              --context "$KUBE_CONTEXT" \
+                              --namespace "$K8S_NAMESPACE" \
+                              logs deployment/flight-delay-dev-backend \
+                              --all-containers=true \
+                              --tail=150 || true
+
+                            kubectl \
+                              --context "$KUBE_CONTEXT" \
+                              --namespace "$K8S_NAMESPACE" \
+                              logs deployment/flight-delay-dev-frontend \
+                              --all-containers=true \
+                              --tail=150 || true
+
+                            kubectl \
+                              --context "$KUBE_CONTEXT" \
+                              --namespace "$K8S_NAMESPACE" \
+                              logs deployment/flight-delay-dev-analytics \
+                              --all-containers=true \
+                              --tail=150 || true
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Verify Kubernetes Deployment') {
+            when {
+                expression {
+                    params.DEPLOY_KUBERNETES &&
+                    params.PUBLISH_IMAGES &&
+                    env.SOURCE_BRANCH == 'main'
+                }
+            }
+
+            steps {
+                withCredentials([
+                    file(
+                        credentialsId: env.KUBECONFIG_CREDENTIALS,
+                        variable: 'KUBECONFIG'
+                    )
+                ]) {
+                    sh '''
+                        set -eu
+
+                        helm status "$HELM_RELEASE" \
+                          --kube-context "$KUBE_CONTEXT" \
+                          --namespace "$K8S_NAMESPACE"
+
+                        kubectl \
+                          --context "$KUBE_CONTEXT" \
+                          --namespace "$K8S_NAMESPACE" \
+                          wait \
+                          --for=condition=Available \
+                          deployment \
+                          --all \
+                          --timeout=300s
+
+                        kubectl \
+                          --context "$KUBE_CONTEXT" \
+                          --namespace "$K8S_NAMESPACE" \
+                          get deployments,pods,services,pvc -o wide
+
+                        kubectl \
+                          --context "$KUBE_CONTEXT" \
+                          --namespace "$K8S_NAMESPACE" \
+                          get deployments \
+                          -o custom-columns='DEPLOYMENT:.metadata.name,IMAGE:.spec.template.spec.containers[*].image'
+
+                        kubectl \
+                          --context "$KUBE_CONTEXT" \
+                          --namespace "$K8S_NAMESPACE" \
+                          exec deployment/flight-delay-dev-redis \
+                          -- redis-cli ping |
+                          grep --quiet '^PONG$'
+
+                        kubectl \
+                          --context "$KUBE_CONTEXT" \
+                          --namespace "$K8S_NAMESPACE" \
+                          exec deployment/flight-delay-dev-frontend \
+                          -- wget \
+                             --quiet \
+                             --output-document=- \
+                             http://backend:5000/health
+                    '''
+                }
+            }
+        }
+
+        stage('Kubernetes Smoke Tests') {
+            when {
+                expression {
+                    params.DEPLOY_KUBERNETES &&
+                    params.PUBLISH_IMAGES &&
                     env.SOURCE_BRANCH == 'main'
                 }
             }
@@ -627,33 +741,34 @@ Compose project: ${env.CI_PROJECT}
                 sh '''
                     set -eu
 
-                    export FRONTEND_REF
-                    export BACKEND_REF
+                    curl \
+                      --fail \
+                      --silent \
+                      --show-error \
+                      "$K8S_FRONTEND_URL/health" |
+                      grep --quiet '^ok$'
 
-                    export BACKEND_HOST_PORT=5000
-                    export FRONTEND_HOST_PORT=5173
-                    export ANALYTICS_HOST_PORT=8050
+                    curl \
+                      --fail \
+                      --silent \
+                      --show-error \
+                      --output /dev/null \
+                      "$K8S_FRONTEND_URL/"
 
-                    echo "Deploying persistent local environment..."
+                    curl \
+                      --fail \
+                      --silent \
+                      --show-error \
+                      --output /dev/null \
+                      "$K8S_ANALYTICS_URL/"
 
-                    docker compose \
-                      --project-name "$PROD_PROJECT" \
-                      --file "$COMPOSE_FILE" \
-                      up \
-                      --detach \
-                      --wait \
-                      --wait-timeout 300 \
-                      --no-build \
-                      --force-recreate \
-                      --remove-orphans
-
-                    echo
-                    echo "Persistent deployment status:"
-
-                    docker compose \
-                      --project-name "$PROD_PROJECT" \
-                      --file "$COMPOSE_FILE" \
-                      ps
+                    curl \
+                      --silent \
+                      --show-error \
+                      --output /dev/null \
+                      --write-out '%{http_code}' \
+                      "$K8S_FRONTEND_URL/api/v1/predict/stats" |
+                      grep --extended-regexp --quiet '^(200|401|403)$'
                 '''
             }
         }
@@ -661,46 +776,30 @@ Compose project: ${env.CI_PROJECT}
         stage('Show Deployment') {
             when {
                 expression {
-                    params.DEPLOY_LOCALLY &&
+                    params.DEPLOY_KUBERNETES &&
+                    params.PUBLISH_IMAGES &&
                     env.SOURCE_BRANCH == 'main'
                 }
             }
 
             steps {
-                echo """
-==================================================
-FlightDelayAI deployment
-==================================================
-Frontend:  http://localhost:5173
-Backend:   http://localhost:5000
-Analytics: http://localhost:8050
-Health:    http://localhost:5000/health
-==================================================
-"""
+                echo "Helm release: ${env.HELM_RELEASE}"
+                echo "Namespace: ${env.K8S_NAMESPACE}"
+                echo "Kube context: ${env.KUBE_CONTEXT}"
+                echo "Image tag: ${env.IMAGE_TAG}"
+                echo "Frontend: ${env.K8S_FRONTEND_URL}"
+                echo "Analytics: ${env.K8S_ANALYTICS_URL}"
             }
         }
     }
 
     post {
         success {
-            echo """
-==================================================
-Pipeline succeeded
-==================================================
-Branch: ${env.SOURCE_BRANCH}
-Tag:    ${env.IMAGE_TAG}
-==================================================
-"""
+            echo "Pipeline succeeded for ${env.SOURCE_BRANCH}: ${env.IMAGE_TAG}"
         }
 
         failure {
-            echo """
-==================================================
-Pipeline failed
-==================================================
-Check the failing stage and the diagnostic logs above.
-==================================================
-"""
+            echo 'Pipeline failed. Check the failing stage and diagnostic logs.'
         }
 
         aborted {
