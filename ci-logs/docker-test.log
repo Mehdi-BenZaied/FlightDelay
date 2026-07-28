@@ -1,0 +1,4 @@
+Build Frontend
+ERROR: failed to connect to the docker API at unix:///var/run/docker.sock
+dial unix /var/run/docker.sock: connect: no such file or directory
+script returned exit code 1

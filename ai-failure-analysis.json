@@ -1,0 +1,59 @@
+{
+  "analysis_status": "insufficient_evidence",
+  "summary": "The Jenkins build agent is unable to connect to the Docker API, which indicates a problem with Docker Desktop WSL integration.",
+  "failed_stage": "Build Frontend",
+  "failed_component": "Docker API connection",
+  "category": "docker",
+  "root_cause": "Docker Desktop WSL integration is disabled or not properly configured.",
+  "secondary_errors": [],
+  "evidence": [
+    {
+      "log_file": "ci-logs/docker-test.log",
+      "excerpt": "ERROR: failed to connect to the docker API at unix:///var/run/docker.sock\ndial unix /var/run/docker.sock: connect: no such file or directory",
+      "interpretation": "This error clearly indicates that the Jenkins agent is unable to establish a connection to the Docker daemon, which is essential for building and running Docker images."
+    }
+  ],
+  "checks": [
+    {
+      "platform": "Windows PowerShell",
+      "command": "wsl --list --verbose",
+      "purpose": "Check if WSL is properly installed and running.",
+      "expected_result": "The output should list the Ubuntu distribution as running."
+    },
+    {
+      "platform": "Windows PowerShell",
+      "command": "Get-Service -Name docker-desktop",
+      "purpose": "Verify that Docker Desktop service is running on Windows.",
+      "expected_result": "The service status should be 'Running'."
+    },
+    {
+      "platform": "WSL",
+      "command": "docker --version",
+      "purpose": "Check if Docker is installed and accessible within WSL.",
+      "expected_result": "The command should return the version of Docker installed."
+    }
+  ],
+  "remediation_steps": [
+    {
+      "priority": "high",
+      "action": "Ensure that Docker Desktop is running on Windows.",
+      "command": "Start-Service -Name docker-desktop",
+      "risk": "destructive"
+    },
+    {
+      "priority": "medium",
+      "action": "Re-enable WSL integration in Docker Desktop settings.",
+      "command": "docker desktop --settings",
+      "risk": "destructive"
+    }
+  ],
+  "prevention": [
+    "Ensure that Docker Desktop is always running on the Windows host before initiating Jenkins builds.",
+    "Regularly check and re-enable WSL integration if it becomes disabled."
+  ],
+  "missing_information": [
+    "The exact status of Docker Desktop service on Windows.",
+    "The output of `wsl --list --verbose` to confirm WSL is properly installed and running."
+  ],
+  "confidence": 0.8
+}

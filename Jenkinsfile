@@ -15,13 +15,25 @@ pipeline {
             defaultValue: false,
             description: 'Deploy FlightDelay to kind with Helm'
         )
+
+        booleanParam(
+            name: 'AI_FAILURE_ANALYSIS',
+            defaultValue: true,
+            description: 'Analyze failed pipeline logs with local Ollama'
+        )
+
+        string(
+            name: 'OLLAMA_MODEL',
+            defaultValue: 'qwen2.5-coder:7b-instruct',
+            description: 'Ollama model used by the backend and integration tests'
+        )
     }
 
     options {
         skipDefaultCheckout(true)
         disableConcurrentBuilds()
         timestamps()
-        timeout(time: 60, unit: 'MINUTES')
+        timeout(time: 120, unit: 'MINUTES')
         buildDiscarder(
             logRotator(
                 numToKeepStr: '15',
@@ -33,6 +45,17 @@ pipeline {
     environment {
         FRONTEND_IMAGE = 'mehdibenzaied/flight-delay-frontend'
         BACKEND_IMAGE  = 'mehdibenzaied/flight-delay-backend'
+
+        OLLAMA_IMAGE         = 'ollama/ollama:latest'
+        OLLAMA_BASE_URL      = 'http://ollama:11434'
+        OLLAMA_MODEL         = 'qwen2.5-coder:7b-instruct'
+        OLLAMA_MODELS_VOLUME = 'flight-delay-ollama-models'
+
+        AI_ANALYZER_IMAGE = 'python:3.12-alpine'
+        AI_SCRIPT         = 'scripts/ai/analyze_failure.py'
+        AI_OUTPUT_JSON    = 'ai-failure-analysis.json'
+        AI_OUTPUT_MD      = 'ai-failure-analysis.md'
+        CI_LOGS_DIR       = 'ci-logs'
 
         REGISTRY_CREDENTIALS   = 'DockerHub'
         KUBECONFIG_CREDENTIALS = 'kind-flight-delay-kubeconfig'
@@ -116,6 +139,12 @@ pipeline {
         stage('Validate Parameters') {
             steps {
                 script {
+                    if (!params.OLLAMA_MODEL?.trim()) {
+                        error('OLLAMA_MODEL cannot be empty.')
+                    }
+
+                    env.OLLAMA_MODEL = params.OLLAMA_MODEL.trim()
+
                     if (params.DEPLOY_KUBERNETES && !params.PUBLISH_IMAGES) {
                         error(
                             'DEPLOY_KUBERNETES requires PUBLISH_IMAGES=true.'
@@ -130,6 +159,10 @@ pipeline {
                             'Kubernetes deployment is allowed only from main.'
                         )
                     }
+
+                    echo "Ollama image: ${env.OLLAMA_IMAGE}"
+                    echo "Ollama model: ${env.OLLAMA_MODEL}"
+                    echo "Ollama URL in Compose: ${env.OLLAMA_BASE_URL}"
                 }
             }
         }
@@ -147,6 +180,7 @@ pipeline {
                     command -v helm
 
                     test -f Jenkinsfile
+                    test -f "$AI_SCRIPT"
                     test -f "$COMPOSE_FILE"
 
                     test -f backend/Dockerfile
@@ -175,18 +209,25 @@ pipeline {
 
         stage('Validate Docker Compose') {
             steps {
-                sh '''
-                    set -eu
+                sh '''#!/usr/bin/env bash
+                    set -Eeuo pipefail
+
+                    mkdir -p "$CI_LOGS_DIR"
 
                     export FRONTEND_REF
                     export BACKEND_REF
                     export BACKEND_HOST_PORT=5000
                     export FRONTEND_HOST_PORT=5173
                     export ANALYTICS_HOST_PORT=8050
+                    export OLLAMA_HOST_PORT=11434
+                    export OLLAMA_IMAGE
+                    export OLLAMA_MODEL
+                    export OLLAMA_MODELS_VOLUME
 
                     docker compose \
                       --file "$COMPOSE_FILE" \
-                      config --quiet
+                      config --quiet \
+                      2>&1 | tee "$CI_LOGS_DIR/validate-compose.log"
                 '''
             }
         }
@@ -226,8 +267,10 @@ pipeline {
             parallel {
                 stage('Build Frontend') {
                     steps {
-                        sh '''
-                            set -eu
+                        sh '''#!/usr/bin/env bash
+                            set -Eeuo pipefail
+
+                            mkdir -p "$CI_LOGS_DIR"
 
                             docker build \
                               --pull \
@@ -235,15 +278,18 @@ pipeline {
                               --target runtime \
                               --file frontend/Dockerfile \
                               --tag "$FRONTEND_REF" \
-                              frontend
+                              frontend \
+                              2>&1 | tee "$CI_LOGS_DIR/build-frontend.log"
                         '''
                     }
                 }
 
                 stage('Build Backend') {
                     steps {
-                        sh '''
-                            set -eu
+                        sh '''#!/usr/bin/env bash
+                            set -Eeuo pipefail
+
+                            mkdir -p "$CI_LOGS_DIR"
 
                             docker build \
                               --pull \
@@ -251,7 +297,8 @@ pipeline {
                               --target runtime \
                               --file backend/Dockerfile \
                               --tag "$BACKEND_REF" \
-                              .
+                              . \
+                              2>&1 | tee "$CI_LOGS_DIR/build-backend.log"
                         '''
                     }
                 }
@@ -276,15 +323,27 @@ pipeline {
 
         stage('Docker Compose Integration Tests') {
             steps {
-                sh '''
-                    set -eu
+                sh '''#!/usr/bin/env bash
+                    set -Eeuo pipefail
                     set +x
+
+                    mkdir -p "$CI_LOGS_DIR"
+                    exec > >(tee "$CI_LOGS_DIR/docker-compose-integration.log") 2>&1
 
                     export FRONTEND_REF
                     export BACKEND_REF
                     export BACKEND_HOST_PORT=0
                     export FRONTEND_HOST_PORT=0
                     export ANALYTICS_HOST_PORT=0
+                    export OLLAMA_HOST_PORT=0
+                    export OLLAMA_IMAGE
+                    export OLLAMA_MODEL
+                    export OLLAMA_MODELS_VOLUME
+
+                    docker volume inspect "$OLLAMA_MODELS_VOLUME" \
+                      > /dev/null 2>&1 ||
+                      docker volume create "$OLLAMA_MODELS_VOLUME" \
+                      > /dev/null
 
                     docker compose \
                       --project-name "$CI_PROJECT" \
@@ -292,13 +351,40 @@ pipeline {
                       up \
                       --detach \
                       --wait \
-                      --wait-timeout 300 \
+                      --wait-timeout 1800 \
                       --no-build
 
                     docker compose \
                       --project-name "$CI_PROJECT" \
                       --file "$COMPOSE_FILE" \
                       ps
+
+                    docker compose \
+                      --project-name "$CI_PROJECT" \
+                      --file "$COMPOSE_FILE" \
+                      exec -T ollama \
+                      ollama show "$OLLAMA_MODEL" \
+                      > /dev/null
+
+                    docker compose \
+                      --project-name "$CI_PROJECT" \
+                      --file "$COMPOSE_FILE" \
+                      exec -T backend \
+                      sh -eu -c '
+                        response="$(
+                          curl \
+                            --fail \
+                            --silent \
+                            --show-error \
+                            --max-time 600 \
+                            --header "Content-Type: application/json" \
+                            --data "{\"model\":\"${OLLAMA_MODEL}\",\"prompt\":\"Reply only with OK.\",\"stream\":false}" \
+                            "${OLLAMA_BASE_URL}/api/generate"
+                        )"
+
+                        printf "%s" "$response" |
+                          grep --quiet '"response"'
+                      '
 
                     docker compose \
                       --project-name "$CI_PROJECT" \
@@ -371,31 +457,52 @@ pipeline {
 
             post {
                 unsuccessful {
-                    sh '''
+                    sh '''#!/usr/bin/env bash
                         set +e
                         set +x
+
+                        mkdir -p "$CI_LOGS_DIR"
 
                         export FRONTEND_REF
                         export BACKEND_REF
                         export BACKEND_HOST_PORT=0
                         export FRONTEND_HOST_PORT=0
                         export ANALYTICS_HOST_PORT=0
+                        export OLLAMA_HOST_PORT=0
+                        export OLLAMA_IMAGE
+                        export OLLAMA_MODEL
+                        export OLLAMA_MODELS_VOLUME
 
-                        docker compose \
-                          --project-name "$CI_PROJECT" \
-                          --file "$COMPOSE_FILE" \
-                          ps --all || true
+                        {
+                            echo '===== docker compose ps --all ====='
+                            docker compose \
+                              --project-name "$CI_PROJECT" \
+                              --file "$COMPOSE_FILE" \
+                              ps --all || true
 
-                        docker compose \
-                          --project-name "$CI_PROJECT" \
-                          --file "$COMPOSE_FILE" \
-                          logs \
-                          --no-color \
-                          --timestamps || true
+                            echo
+                            echo '===== Ollama and backend logs ====='
+                            docker compose \
+                              --project-name "$CI_PROJECT" \
+                              --file "$COMPOSE_FILE" \
+                              logs \
+                              --no-color \
+                              --timestamps \
+                              ollama ollama-init backend || true
+
+                            echo
+                            echo '===== All Compose logs ====='
+                            docker compose \
+                              --project-name "$CI_PROJECT" \
+                              --file "$COMPOSE_FILE" \
+                              logs \
+                              --no-color \
+                              --timestamps || true
+                        } 2>&1 | tee "$CI_LOGS_DIR/docker-compose-failure.log"
                     '''
                 }
 
-                cleanup {
+                success {
                     sh '''
                         set +e
                         set +x
@@ -405,6 +512,10 @@ pipeline {
                         export BACKEND_HOST_PORT=0
                         export FRONTEND_HOST_PORT=0
                         export ANALYTICS_HOST_PORT=0
+                        export OLLAMA_HOST_PORT=0
+                        export OLLAMA_IMAGE
+                        export OLLAMA_MODEL
+                        export OLLAMA_MODELS_VOLUME
 
                         docker compose \
                           --project-name "$CI_PROJECT" \
@@ -616,9 +727,12 @@ pipeline {
                             variable: 'KUBECONFIG'
                         )
                     ]) {
-                        sh '''
+                        sh '''#!/usr/bin/env bash
                             set +e
 
+                            mkdir -p "$CI_LOGS_DIR"
+
+                            {
                             helm status "$HELM_RELEASE" \
                               --kube-context "$KUBE_CONTEXT" \
                               --namespace "$K8S_NAMESPACE" || true
@@ -659,6 +773,7 @@ pipeline {
                               logs deployment/flight-delay-dev-analytics \
                               --all-containers=true \
                               --tail=150 || true
+                            } 2>&1 | tee "$CI_LOGS_DIR/kubernetes-failure.log"
                         '''
                     }
                 }
@@ -799,7 +914,135 @@ pipeline {
         }
 
         failure {
-            echo 'Pipeline failed. Check the failing stage and diagnostic logs.'
+            echo 'Pipeline failed. Collecting logs and running Ollama analysis.'
+
+            script {
+                if (params.AI_FAILURE_ANALYSIS) {
+                    sh '''#!/usr/bin/env bash
+                        set +e
+                        set +x
+
+                        mkdir -p "$CI_LOGS_DIR"
+
+                        MODEL="${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}"
+                        PROJECT="${CI_PROJECT:-flight-delay-ci-${BUILD_NUMBER}}"
+                        AI_NETWORK="${PROJECT}-ai-network"
+                        AI_OLLAMA_CONTAINER="${PROJECT}-ai-ollama"
+
+                        {
+                            echo "Job: ${JOB_NAME:-unknown}"
+                            echo "Build: ${BUILD_NUMBER:-unknown}"
+                            echo "Build URL: ${BUILD_URL:-unknown}"
+                            echo "Branch: ${SOURCE_BRANCH:-${BRANCH_NAME:-unknown}}"
+                            echo "Commit: ${SHORT_SHA:-unknown}"
+                            echo "Node: ${NODE_NAME:-unknown}"
+                            echo "Workspace: ${WORKSPACE:-unknown}"
+                            echo "Ollama model: $MODEL"
+                        } > "$CI_LOGS_DIR/pipeline-context.log"
+
+                        {
+                            docker compose \
+                              --project-name "$PROJECT" \
+                              --file "$COMPOSE_FILE" \
+                              ps --all || true
+
+                            docker compose \
+                              --project-name "$PROJECT" \
+                              --file "$COMPOSE_FILE" \
+                              logs \
+                              --no-color \
+                              --timestamps || true
+                        } > "$CI_LOGS_DIR/final-compose-state.log" 2>&1
+
+                        docker compose \
+                          --project-name "$PROJECT" \
+                          --file "$COMPOSE_FILE" \
+                          down \
+                          --volumes \
+                          --remove-orphans \
+                          > /dev/null 2>&1 || true
+
+                        docker rm -f "$AI_OLLAMA_CONTAINER" \
+                          > /dev/null 2>&1 || true
+                        docker network rm "$AI_NETWORK" \
+                          > /dev/null 2>&1 || true
+
+                        docker volume inspect "$OLLAMA_MODELS_VOLUME" \
+                          > /dev/null 2>&1 ||
+                          docker volume create "$OLLAMA_MODELS_VOLUME" \
+                          > /dev/null
+
+                        docker network create "$AI_NETWORK" \
+                          > /dev/null
+
+                        docker run \
+                          --detach \
+                          --name "$AI_OLLAMA_CONTAINER" \
+                          --network "$AI_NETWORK" \
+                          --env OLLAMA_HOST=0.0.0.0:11434 \
+                          --env OLLAMA_KEEP_ALIVE=10m \
+                          --volume "$OLLAMA_MODELS_VOLUME:/root/.ollama" \
+                          "$OLLAMA_IMAGE" \
+                          > /dev/null
+
+                        ollama_ready=false
+                        for attempt in $(seq 1 60); do
+                            if docker exec "$AI_OLLAMA_CONTAINER" \
+                              ollama list > /dev/null 2>&1
+                            then
+                                ollama_ready=true
+                                break
+                            fi
+
+                            sleep 2
+                        done
+
+                        if [ "$ollama_ready" != true ]; then
+                            echo 'Ollama did not become ready for AI analysis.' |
+                              tee "$CI_LOGS_DIR/ai-analysis-error.log"
+                            docker logs "$AI_OLLAMA_CONTAINER" \
+                              >> "$CI_LOGS_DIR/ai-analysis-error.log" 2>&1 || true
+                            exit 0
+                        fi
+
+                        docker exec "$AI_OLLAMA_CONTAINER" \
+                          ollama pull "$MODEL" \
+                          2>&1 | tee "$CI_LOGS_DIR/ollama-model-pull.log"
+
+                        docker run \
+                          --rm \
+                          --user "$(id -u):$(id -g)" \
+                          --network "$AI_NETWORK" \
+                          --volume "$WORKSPACE:/workspace" \
+                          --workdir /workspace \
+                          --env "OLLAMA_URL=http://${AI_OLLAMA_CONTAINER}:11434/api/chat" \
+                          --env "OLLAMA_MODEL=$MODEL" \
+                          --env "JOB_NAME=${JOB_NAME:-unknown}" \
+                          --env "BUILD_NUMBER=${BUILD_NUMBER:-unknown}" \
+                          --env "BUILD_URL=${BUILD_URL:-unknown}" \
+                          --env "SOURCE_BRANCH=${SOURCE_BRANCH:-${BRANCH_NAME:-unknown}}" \
+                          --env "SHORT_SHA=${SHORT_SHA:-unknown}" \
+                          --env "NODE_NAME=${NODE_NAME:-unknown}" \
+                          --env WORKSPACE=/workspace \
+                          "$AI_ANALYZER_IMAGE" \
+                          python "$AI_SCRIPT" \
+                            --logs-dir "$CI_LOGS_DIR" \
+                            --output-json "$AI_OUTPUT_JSON" \
+                            --output-markdown "$AI_OUTPUT_MD" \
+                          2>&1 | tee "$CI_LOGS_DIR/ai-analysis-run.log"
+
+                        exit 0
+                    '''
+                } else {
+                    echo 'AI failure analysis is disabled for this build.'
+                }
+            }
+
+            archiveArtifacts(
+                artifacts: 'ci-logs/**/*.log, ai-failure-analysis.json, ai-failure-analysis.md',
+                allowEmptyArchive: true,
+                fingerprint: true
+            )
         }
 
         aborted {
@@ -807,6 +1050,38 @@ pipeline {
         }
 
         always {
+            sh '''#!/usr/bin/env bash
+                set +e
+                set +x
+
+                PROJECT="${CI_PROJECT:-flight-delay-ci-${BUILD_NUMBER}}"
+                AI_NETWORK="${PROJECT}-ai-network"
+                AI_OLLAMA_CONTAINER="${PROJECT}-ai-ollama"
+
+                docker rm -f "$AI_OLLAMA_CONTAINER" \
+                  > /dev/null 2>&1 || true
+                docker network rm "$AI_NETWORK" \
+                  > /dev/null 2>&1 || true
+
+                export FRONTEND_REF
+                export BACKEND_REF
+                export BACKEND_HOST_PORT=0
+                export FRONTEND_HOST_PORT=0
+                export ANALYTICS_HOST_PORT=0
+                export OLLAMA_HOST_PORT=0
+                export OLLAMA_IMAGE
+                export OLLAMA_MODEL
+                export OLLAMA_MODELS_VOLUME
+
+                docker compose \
+                  --project-name "$PROJECT" \
+                  --file "$COMPOSE_FILE" \
+                  down \
+                  --volumes \
+                  --remove-orphans \
+                  > /dev/null 2>&1 || true
+            '''
+
             cleanWs()
         }
     }

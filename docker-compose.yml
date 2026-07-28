@@ -27,6 +27,65 @@ services:
     networks:
       - flight-delay-network
 
+  ollama:
+    image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
+
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+      OLLAMA_KEEP_ALIVE: "10m"
+
+    expose:
+      - "11434"
+
+    volumes:
+      - ollama_models:/root/.ollama
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          OLLAMA_HOST=http://127.0.0.1:11434
+          ollama list
+          > /dev/null 2>&1
+          || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+
+    restart: unless-stopped
+
+    networks:
+      - flight-delay-network
+
+  ollama-init:
+    image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
+
+    environment:
+      OLLAMA_HOST: "http://ollama:11434"
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}
+
+    entrypoint:
+      - /bin/sh
+      - -c
+
+    command:
+      - |
+        set -eu
+        echo "Preparing Ollama model: $${OLLAMA_MODEL}"
+        ollama pull "$${OLLAMA_MODEL}"
+        ollama show "$${OLLAMA_MODEL}" > /dev/null
+        echo "Ollama model is ready: $${OLLAMA_MODEL}"
+
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+    restart: "no"
+
+    networks:
+      - flight-delay-network
+
   backend:
     image: ${BACKEND_REF:-flight-delay-backend:local}
 
@@ -54,6 +113,11 @@ services:
       DATABASE_URL: "sqlite:////app/data/flight_delay.db"
       SQLALCHEMY_DATABASE_URI: "sqlite:////app/data/flight_delay.db"
 
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_HOST: "http://ollama:11434"
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}
+      DEFAULT_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}
+
     command:
       - python
       - run.py
@@ -67,6 +131,10 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      ollama:
+        condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
 
     healthcheck:
       test:
@@ -110,6 +178,11 @@ services:
       DATABASE_URL: "sqlite:////app/data/flight_delay.db"
       SQLALCHEMY_DATABASE_URI: "sqlite:////app/data/flight_delay.db"
 
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_HOST: "http://ollama:11434"
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}
+      DEFAULT_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}
+
     command:
       - python
       - analytics.py
@@ -123,6 +196,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
       backend:
         condition: service_healthy
 
@@ -182,6 +257,9 @@ services:
 volumes:
   backend_data:
   redis_data:
+  ollama_models:
+    external: true
+    name: ${OLLAMA_MODELS_VOLUME:-flight-delay-ollama-models}
 
 networks:
   flight-delay-network:
