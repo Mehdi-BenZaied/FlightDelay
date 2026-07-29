@@ -17,6 +17,9 @@ from typing import Any
 DEFAULT_MODEL = "qwen2.5-coder:7b-instruct"
 MAX_LOG_CHARACTERS = 50_000
 CONTEXT_LINES = 6
+OLLAMA_REQUEST_TIMEOUT_SECONDS = int(
+    os.getenv("OLLAMA_REQUEST_TIMEOUT_SECONDS", "2500")
+)
 
 ERROR_PATTERN = re.compile(
     r"""
@@ -480,10 +483,16 @@ def request_analysis(
         method="POST",
     )
 
+    print(
+        "Ollama request timeout: "
+        f"{OLLAMA_REQUEST_TIMEOUT_SECONDS} seconds",
+        flush=True,
+    )
+
     try:
         with urllib.request.urlopen(
             request,
-            timeout=300,
+            timeout=OLLAMA_REQUEST_TIMEOUT_SECONDS,
         ) as response:
             payload = json.loads(
                 response.read().decode("utf-8")
