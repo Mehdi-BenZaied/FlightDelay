@@ -54,21 +54,30 @@ Environment you are analyzing:
 - Jenkins controller runs on Windows.
 - Jenkins build agent runs inside Ubuntu WSL.
 - Docker Desktop on Windows provides the Docker Engine to WSL.
-- The Jenkins agent uses the labels "linux" and "docker".
-- The application is a full-stack HR portal.
-- Frontend: Angular SSR / Node Express, port 4200.
-- Backend: FastAPI / Python, port 4000.
-- Database: MySQL 8, port 3306.
-- Docker Compose starts frontend, backend, and database together.
-- Images are built by Jenkins and pushed to Docker Hub.
+- The Jenkins agent label is "linux-docker-agent".
+- The application is FlightDelay, a containerized full-stack application.
+- Frontend: web application served by Nginx, container port 80.
+- Backend: Python API started by run.py, container port 5000.
+- Analytics: Python analytics service started by analytics.py, port 8050.
+- Cache: Redis 7, port 6379.
+- Local database: SQLite stored in /app/data/flight_delay.db.
+- Machine-learning files include ml/models/v1_model.json and
+  data/flight_data.csv.
+- Ollama runs as a Docker Compose service on port 11434.
+- The default Ollama model is qwen2.5-coder:7b-instruct.
+- Docker Compose starts Redis, Ollama, backend, analytics, and frontend.
+- Images are built by Jenkins and may be pushed to Docker Hub.
+- Kubernetes deployment is optional and uses kind plus Helm.
 - Important pipeline stages include:
-  1. Checkout
-  2. Validate Compose
-  3. Build Frontend
-  4. Build Backend
-  5. Compose Integration Test
-  6. Publish Images
-  7. Optional Start Local Demo
+  1. Checkout and Metadata
+  2. Validate Parameters
+  3. Validate Agent and Project
+  4. Validate Docker Compose
+  5. Validate Helm Chart
+  6. Build Docker Images
+  7. Docker Compose Integration Tests
+  8. Publish Docker Images
+  9. Optional Kubernetes deployment and smoke tests
 
 Your task is to diagnose a failed pipeline using only the supplied evidence.
 
@@ -106,16 +115,19 @@ Common environment-specific failures to recognize include:
 - Docker Desktop WSL integration is disabled.
 - Jenkins agent is offline or has no executor.
 - Jenkins is using the wrong WSL home directory.
-- Windows localhost is not reachable from WSL.
-- GitLab or Docker Hub credentials are invalid.
+- Docker Hub credentials are invalid or image push is denied.
 - Docker image or tag does not exist.
+- Docker Compose configuration is invalid.
 - Docker Compose health checks fail.
-- Angular SSR rejects Kubernetes Pod-IP Host headers.
-- FastAPI cannot connect to MySQL.
-- A Service selector does not match Pod labels.
-- A health probe uses the wrong port or path.
-- Registry login succeeds but image push is denied.
-- Disk space or Docker build cache is exhausted.
+- Redis is unhealthy or unreachable from the backend.
+- The backend cannot find its model, dataset, or SQLite path.
+- Ollama is unreachable, the model pull fails, or memory is insufficient.
+- The backend uses the wrong Ollama URL or model name.
+- The frontend cannot reach the backend service.
+- Helm rendering fails because a value or template is invalid.
+- Kubernetes Service selectors do not match Pod labels.
+- Kubernetes probes use the wrong port or path.
+- Disk space, memory, or Docker build cache is exhausted.
 
 Return only structured JSON that follows the supplied JSON schema.
 """
