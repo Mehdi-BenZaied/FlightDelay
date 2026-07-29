@@ -22,6 +22,12 @@ pipeline {
             description: 'Analyze failed pipeline logs with local Ollama'
         )
 
+        booleanParam(
+            name: 'FORCE_AI_FAILURE',
+            defaultValue: false,
+            description: 'Force a controlled failure to test the Ollama analysis'
+        )
+
         string(
             name: 'OLLAMA_MODEL',
             defaultValue: 'qwen2.5-coder:7b-instruct',
@@ -169,40 +175,80 @@ pipeline {
 
         stage('Validate Agent and Project') {
             steps {
-                sh '''
-                    set -eu
+                sh '''#!/usr/bin/env bash
+                    set -Eeuo pipefail
 
+                    WORKSPACE_ROOT="$(pwd -P)"
+                    AI_SCRIPT_HOST="$WORKSPACE_ROOT/$AI_SCRIPT"
+
+                    echo '===== Jenkins checkout information ====='
+                    echo "WORKSPACE=${WORKSPACE:-unknown}"
+                    echo "Current directory=$WORKSPACE_ROOT"
+                    echo "Checked-out commit=$(git rev-parse HEAD)"
+                    echo "Checked-out branch=$(git branch --show-current || true)"
+                    git log -1 --oneline
+
+                    echo '===== Required commands ====='
                     command -v git
                     command -v docker
                     docker compose version
                     command -v curl
                     command -v kubectl
                     command -v helm
+                    command -v python3
 
-                    test -f Jenkinsfile
-                    test -f "$AI_SCRIPT"
-                    test -f "$COMPOSE_FILE"
+                    echo '===== AI analyzer verification ====='
+                    echo "Expected relative path: $AI_SCRIPT"
+                    echo "Expected absolute path: $AI_SCRIPT_HOST"
 
-                    test -f backend/Dockerfile
-                    test -f backend/requirements.txt
-                    test -f backend/run.py
-                    test -f backend/analytics.py
-                    test -f backend/app/core/config.py
+                    if ! git ls-tree \
+                      --recursive \
+                      --name-only \
+                      HEAD |
+                      grep --fixed-strings --line-regexp "$AI_SCRIPT"
+                    then
+                        echo "ERROR: $AI_SCRIPT is not present in the checked-out Git commit."
+                        exit 1
+                    fi
 
-                    test -f frontend/Dockerfile
-                    test -f frontend/nginx.conf
-                    test -f frontend/package.json
-                    test -f frontend/package-lock.json
+                    if [ ! -f "$AI_SCRIPT_HOST" ]; then
+                        echo 'ERROR: AI analyzer is missing from the Jenkins workspace.'
+                        echo 'Files found under scripts/:'
+                        find "$WORKSPACE_ROOT/scripts" \
+                          -maxdepth 4 \
+                          -type f \
+                          -print 2>/dev/null |
+                          sort || true
+                        exit 1
+                    fi
 
-                    test -f ml/models/v1_model.json
-                    test -f data/flight_data.csv
+                    python3 -m py_compile "$AI_SCRIPT_HOST"
 
-                    test -f "$HELM_CHART/Chart.yaml"
-                    test -f "$HELM_CHART/values.yaml"
-                    test -f "$HELM_VALUES"
-                    test -d "$HELM_CHART/templates"
+                    echo '===== Project files ====='
+                    test -f "$WORKSPACE_ROOT/Jenkinsfile"
+                    test -f "$WORKSPACE_ROOT/$COMPOSE_FILE"
 
-                    echo "Agent and project validation succeeded."
+                    test -f "$WORKSPACE_ROOT/backend/Dockerfile"
+                    test -f "$WORKSPACE_ROOT/backend/requirements.txt"
+                    test -f "$WORKSPACE_ROOT/backend/run.py"
+                    test -f "$WORKSPACE_ROOT/backend/analytics.py"
+                    test -f "$WORKSPACE_ROOT/backend/app/core/config.py"
+
+                    test -f "$WORKSPACE_ROOT/frontend/Dockerfile"
+                    test -f "$WORKSPACE_ROOT/frontend/nginx.conf"
+                    test -f "$WORKSPACE_ROOT/frontend/package.json"
+                    test -f "$WORKSPACE_ROOT/frontend/package-lock.json"
+
+                    test -f "$WORKSPACE_ROOT/ml/models/v1_model.json"
+                    test -f "$WORKSPACE_ROOT/data/flight_data.csv"
+
+                    test -f "$WORKSPACE_ROOT/$HELM_CHART/Chart.yaml"
+                    test -f "$WORKSPACE_ROOT/$HELM_CHART/values.yaml"
+                    test -f "$WORKSPACE_ROOT/$HELM_VALUES"
+                    test -d "$WORKSPACE_ROOT/$HELM_CHART/templates"
+
+                    echo 'AI script found and Python syntax is valid.'
+                    echo 'Agent and project validation succeeded.'
                 '''
             }
         }
@@ -219,7 +265,6 @@ pipeline {
                     export BACKEND_HOST_PORT=5000
                     export FRONTEND_HOST_PORT=5173
                     export ANALYTICS_HOST_PORT=8050
-                    export OLLAMA_HOST_PORT=11434
                     export OLLAMA_IMAGE
                     export OLLAMA_MODEL
                     export OLLAMA_MODELS_VOLUME
@@ -335,7 +380,6 @@ pipeline {
                     export BACKEND_HOST_PORT=0
                     export FRONTEND_HOST_PORT=0
                     export ANALYTICS_HOST_PORT=0
-                    export OLLAMA_HOST_PORT=0
                     export OLLAMA_IMAGE
                     export OLLAMA_MODEL
                     export OLLAMA_MODELS_VOLUME
@@ -468,7 +512,6 @@ pipeline {
                         export BACKEND_HOST_PORT=0
                         export FRONTEND_HOST_PORT=0
                         export ANALYTICS_HOST_PORT=0
-                        export OLLAMA_HOST_PORT=0
                         export OLLAMA_IMAGE
                         export OLLAMA_MODEL
                         export OLLAMA_MODELS_VOLUME
@@ -512,7 +555,6 @@ pipeline {
                         export BACKEND_HOST_PORT=0
                         export FRONTEND_HOST_PORT=0
                         export ANALYTICS_HOST_PORT=0
-                        export OLLAMA_HOST_PORT=0
                         export OLLAMA_IMAGE
                         export OLLAMA_MODEL
                         export OLLAMA_MODELS_VOLUME
@@ -525,6 +567,33 @@ pipeline {
                           --remove-orphans || true
                     '''
                 }
+            }
+        }
+
+        stage('Test AI Failure Analysis') {
+            when {
+                expression {
+                    params.FORCE_AI_FAILURE
+                }
+            }
+
+            steps {
+                sh '''#!/usr/bin/env bash
+                    set -Eeuo pipefail
+
+                    mkdir -p "$CI_LOGS_DIR"
+
+                    {
+                        echo '[Pipeline] stage'
+                        echo '[Pipeline] { (Test AI Failure Analysis)'
+                        echo 'ERROR: simulated backend connection failure'
+                        echo 'redis.exceptions.ConnectionError: Connection refused while connecting to redis:6379'
+                        echo 'Docker Compose Integration Tests failed with exit code 1'
+                    } | tee "$CI_LOGS_DIR/simulated-failure.log"
+
+                    echo 'Controlled failure triggered to validate Ollama analysis.'
+                    exit 1
+                '''
             }
         }
 
@@ -922,12 +991,14 @@ pipeline {
                         set +e
                         set +x
 
-                        mkdir -p "$CI_LOGS_DIR"
-
+                        WORKSPACE_ROOT="$(pwd -P)"
                         MODEL="${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}"
                         PROJECT="${CI_PROJECT:-flight-delay-ci-${BUILD_NUMBER}}"
                         AI_NETWORK="${PROJECT}-ai-network"
                         AI_OLLAMA_CONTAINER="${PROJECT}-ai-ollama"
+                        AI_SCRIPT_HOST="$WORKSPACE_ROOT/$AI_SCRIPT"
+
+                        mkdir -p "$WORKSPACE_ROOT/$CI_LOGS_DIR"
 
                         {
                             echo "Job: ${JOB_NAME:-unknown}"
@@ -936,27 +1007,45 @@ pipeline {
                             echo "Branch: ${SOURCE_BRANCH:-${BRANCH_NAME:-unknown}}"
                             echo "Commit: ${SHORT_SHA:-unknown}"
                             echo "Node: ${NODE_NAME:-unknown}"
-                            echo "Workspace: ${WORKSPACE:-unknown}"
+                            echo "Jenkins workspace: ${WORKSPACE:-unknown}"
+                            echo "Resolved workspace: $WORKSPACE_ROOT"
+                            echo "AI script: $AI_SCRIPT_HOST"
                             echo "Ollama model: $MODEL"
-                        } > "$CI_LOGS_DIR/pipeline-context.log"
+                        } > "$WORKSPACE_ROOT/$CI_LOGS_DIR/pipeline-context.log"
+
+                        if [ ! -f "$AI_SCRIPT_HOST" ]; then
+                            {
+                                echo 'AI failure analysis was skipped.'
+                                echo 'The analyzer script was not found in the checked-out workspace.'
+                                echo "Expected file: $AI_SCRIPT_HOST"
+                                echo 'Files found under scripts/:'
+                                find "$WORKSPACE_ROOT/scripts" \
+                                  -maxdepth 4 \
+                                  -type f \
+                                  -print 2>/dev/null |
+                                  sort || true
+                            } | tee "$WORKSPACE_ROOT/$CI_LOGS_DIR/ai-analysis-error.log"
+
+                            exit 0
+                        fi
 
                         {
                             docker compose \
                               --project-name "$PROJECT" \
-                              --file "$COMPOSE_FILE" \
+                              --file "$WORKSPACE_ROOT/$COMPOSE_FILE" \
                               ps --all || true
 
                             docker compose \
                               --project-name "$PROJECT" \
-                              --file "$COMPOSE_FILE" \
+                              --file "$WORKSPACE_ROOT/$COMPOSE_FILE" \
                               logs \
                               --no-color \
                               --timestamps || true
-                        } > "$CI_LOGS_DIR/final-compose-state.log" 2>&1
+                        } > "$WORKSPACE_ROOT/$CI_LOGS_DIR/final-compose-state.log" 2>&1
 
                         docker compose \
                           --project-name "$PROJECT" \
-                          --file "$COMPOSE_FILE" \
+                          --file "$WORKSPACE_ROOT/$COMPOSE_FILE" \
                           down \
                           --volumes \
                           --remove-orphans \
@@ -972,10 +1061,15 @@ pipeline {
                           docker volume create "$OLLAMA_MODELS_VOLUME" \
                           > /dev/null
 
-                        docker network create "$AI_NETWORK" \
-                          > /dev/null
+                        if ! docker network create "$AI_NETWORK" \
+                          > /dev/null 2>&1
+                        then
+                            echo 'Could not create the isolated AI Docker network.' |
+                              tee "$WORKSPACE_ROOT/$CI_LOGS_DIR/ai-analysis-error.log"
+                            exit 0
+                        fi
 
-                        docker run \
+                        if ! docker run \
                           --detach \
                           --name "$AI_OLLAMA_CONTAINER" \
                           --network "$AI_NETWORK" \
@@ -984,8 +1078,14 @@ pipeline {
                           --volume "$OLLAMA_MODELS_VOLUME:/root/.ollama" \
                           "$OLLAMA_IMAGE" \
                           > /dev/null
+                        then
+                            echo 'Could not start the isolated Ollama container.' |
+                              tee "$WORKSPACE_ROOT/$CI_LOGS_DIR/ai-analysis-error.log"
+                            exit 0
+                        fi
 
                         ollama_ready=false
+
                         for attempt in $(seq 1 60); do
                             if docker exec "$AI_OLLAMA_CONTAINER" \
                               ollama list > /dev/null 2>&1
@@ -999,21 +1099,33 @@ pipeline {
 
                         if [ "$ollama_ready" != true ]; then
                             echo 'Ollama did not become ready for AI analysis.' |
-                              tee "$CI_LOGS_DIR/ai-analysis-error.log"
+                              tee "$WORKSPACE_ROOT/$CI_LOGS_DIR/ai-analysis-error.log"
+
                             docker logs "$AI_OLLAMA_CONTAINER" \
-                              >> "$CI_LOGS_DIR/ai-analysis-error.log" 2>&1 || true
+                              >> "$WORKSPACE_ROOT/$CI_LOGS_DIR/ai-analysis-error.log" \
+                              2>&1 || true
+
                             exit 0
                         fi
 
-                        docker exec "$AI_OLLAMA_CONTAINER" \
+                        if ! docker exec "$AI_OLLAMA_CONTAINER" \
                           ollama pull "$MODEL" \
-                          2>&1 | tee "$CI_LOGS_DIR/ollama-model-pull.log"
+                          2>&1 |
+                          tee "$WORKSPACE_ROOT/$CI_LOGS_DIR/ollama-model-pull.log"
+                        then
+                            echo 'The Ollama model could not be prepared.' |
+                              tee "$WORKSPACE_ROOT/$CI_LOGS_DIR/ai-analysis-error.log"
+
+                            exit 0
+                        fi
+
+                        echo 'Running the analyzer from /workspace/scripts/ai/analyze_failure.py'
 
                         docker run \
                           --rm \
                           --user "$(id -u):$(id -g)" \
                           --network "$AI_NETWORK" \
-                          --volume "$WORKSPACE:/workspace" \
+                          --mount "type=bind,source=$WORKSPACE_ROOT,target=/workspace" \
                           --workdir /workspace \
                           --env "OLLAMA_URL=http://${AI_OLLAMA_CONTAINER}:11434/api/chat" \
                           --env "OLLAMA_MODEL=$MODEL" \
@@ -1025,11 +1137,19 @@ pipeline {
                           --env "NODE_NAME=${NODE_NAME:-unknown}" \
                           --env WORKSPACE=/workspace \
                           "$AI_ANALYZER_IMAGE" \
-                          python "$AI_SCRIPT" \
-                            --logs-dir "$CI_LOGS_DIR" \
-                            --output-json "$AI_OUTPUT_JSON" \
-                            --output-markdown "$AI_OUTPUT_MD" \
-                          2>&1 | tee "$CI_LOGS_DIR/ai-analysis-run.log"
+                          python /workspace/scripts/ai/analyze_failure.py \
+                            --logs-dir /workspace/ci-logs \
+                            --output-json /workspace/ai-failure-analysis.json \
+                            --output-markdown /workspace/ai-failure-analysis.md \
+                          2>&1 |
+                          tee "$WORKSPACE_ROOT/$CI_LOGS_DIR/ai-analysis-run.log"
+
+                        ANALYSIS_EXIT_CODE="${PIPESTATUS[0]}"
+
+                        if [ "$ANALYSIS_EXIT_CODE" -ne 0 ]; then
+                            echo "AI analyzer exited with code $ANALYSIS_EXIT_CODE." |
+                              tee "$WORKSPACE_ROOT/$CI_LOGS_DIR/ai-analysis-error.log"
+                        fi
 
                         exit 0
                     '''
@@ -1054,12 +1174,14 @@ pipeline {
                 set +e
                 set +x
 
+                WORKSPACE_ROOT="$(pwd -P)"
                 PROJECT="${CI_PROJECT:-flight-delay-ci-${BUILD_NUMBER}}"
                 AI_NETWORK="${PROJECT}-ai-network"
                 AI_OLLAMA_CONTAINER="${PROJECT}-ai-ollama"
 
                 docker rm -f "$AI_OLLAMA_CONTAINER" \
                   > /dev/null 2>&1 || true
+
                 docker network rm "$AI_NETWORK" \
                   > /dev/null 2>&1 || true
 
@@ -1068,14 +1190,13 @@ pipeline {
                 export BACKEND_HOST_PORT=0
                 export FRONTEND_HOST_PORT=0
                 export ANALYTICS_HOST_PORT=0
-                export OLLAMA_HOST_PORT=0
                 export OLLAMA_IMAGE
                 export OLLAMA_MODEL
                 export OLLAMA_MODELS_VOLUME
 
                 docker compose \
                   --project-name "$PROJECT" \
-                  --file "$COMPOSE_FILE" \
+                  --file "$WORKSPACE_ROOT/$COMPOSE_FILE" \
                   down \
                   --volumes \
                   --remove-orphans \
