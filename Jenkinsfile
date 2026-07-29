@@ -1312,7 +1312,7 @@ PYTHON_AI_PREFLIGHT
             echo 'Pipeline aborted.'
         }
 
-        always {
+        cleanup {
             sh '''#!/usr/bin/env bash
                 set +e
                 set +x
