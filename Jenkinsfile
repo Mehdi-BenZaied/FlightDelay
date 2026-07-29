@@ -57,7 +57,7 @@ pipeline {
         OLLAMA_MODEL         = 'qwen2.5-coder:7b-instruct'
         OLLAMA_MODELS_VOLUME = 'flight-delay-ollama-models'
 
-        AI_ANALYZER_IMAGE = 'python:3.12-alpine'
+        AI_FALLBACK_ANALYZER_IMAGE = 'python:3.12-alpine'
         AI_SCRIPT         = 'scripts/ai/analyze_failure.py'
         AI_OUTPUT_JSON    = 'ai-failure-analysis.json'
         AI_OUTPUT_MD      = 'ai-failure-analysis.md'
@@ -1144,6 +1144,29 @@ PYTHON_OLLAMA_CHECK
                             exit 0
                         fi
 
+                        ANALYZER_IMAGE=''
+
+                        if [ -n "${BACKEND_REF:-}" ] &&
+                           docker image inspect "$BACKEND_REF" > /dev/null 2>&1
+                        then
+                            ANALYZER_IMAGE="$BACKEND_REF"
+                            echo "Using the already-built backend image for AI analysis: $ANALYZER_IMAGE"
+                        elif docker image inspect "$AI_FALLBACK_ANALYZER_IMAGE" \
+                          > /dev/null 2>&1
+                        then
+                            ANALYZER_IMAGE="$AI_FALLBACK_ANALYZER_IMAGE"
+                            echo "Using cached fallback analyzer image: $ANALYZER_IMAGE"
+                        else
+                            {
+                                echo 'AI failure analysis was skipped.'
+                                echo 'No local Python-capable analyzer image is available.'
+                                echo "Expected backend image: ${BACKEND_REF:-not-defined}"
+                                echo "Fallback image is not cached: $AI_FALLBACK_ANALYZER_IMAGE"
+                                echo 'The pipeline intentionally avoids pulling a new image after a failure.'
+                            } | tee "$LOGS_PATH/ai-analysis-error.log"
+                            exit 0
+                        fi
+
                         echo 'Running a real Ollama request before the failure analysis...'
 
                         timeout 1200 docker run \
@@ -1151,8 +1174,9 @@ PYTHON_OLLAMA_CHECK
                           --network "$AI_NETWORK" \
                           --env "OLLAMA_URL=http://${AI_OLLAMA_CONTAINER}:11434/api/chat" \
                           --env "OLLAMA_MODEL=$MODEL" \
-                          "$AI_ANALYZER_IMAGE" \
-                          python - <<'PYTHON_AI_PREFLIGHT' \
+                          --entrypoint python \
+                          "$ANALYZER_IMAGE" \
+                          - <<'PYTHON_AI_PREFLIGHT' \
                           2>&1 | tee "$LOGS_PATH/ai-model-preflight.log"
 import json
 import os
@@ -1233,8 +1257,9 @@ PYTHON_AI_PREFLIGHT
                           --env "SHORT_SHA=${SHORT_SHA:-unknown}" \
                           --env "NODE_NAME=${NODE_NAME:-unknown}" \
                           --env WORKSPACE=/workspace \
-                          "$AI_ANALYZER_IMAGE" \
-                          python /workspace/scripts/ai/analyze_failure.py \
+                          --entrypoint python \
+                          "$ANALYZER_IMAGE" \
+                          /workspace/scripts/ai/analyze_failure.py \
                             --logs-dir /workspace/ci-logs \
                             --output-json /workspace/ai-failure-analysis.json \
                             --output-markdown /workspace/ai-failure-analysis.md \
