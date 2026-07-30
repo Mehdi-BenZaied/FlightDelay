@@ -33,19 +33,29 @@ IGNORED_ANALYSIS_LOGS = {
     "ollama-external-check.log",
 }
 
-LOG_PRIORITY = {
-    "pipeline-context.log": 0,
-    "jenkins-console.log": 1,
-    "simulated-failure.log": 2,
-    "docker-daemon-check.log": 2,
-    "docker-compose-failure.log": 3,
-    "final-compose-state.log": 3,
-    "docker-compose-integration.log": 4,
-    "build-backend.log": 5,
-    "build-frontend.log": 5,
-    "validate-compose.log": 6,
-    "kubernetes-failure.log": 7,
+ALWAYS_INCLUDE_LOGS = {
+    "failure-summary.log",
+    "pipeline-context.log",
+    "docker-compose-health.log",
+    "docker-daemon-check.log",
 }
+
+LOG_PRIORITY = {
+    "failure-summary.log": 0,
+    "pipeline-context.log": 1,
+    "docker-daemon-check.log": 2,
+    "docker-compose-health.log": 2,
+    "jenkins-console.log": 3,
+    "simulated-failure.log": 3,
+    "docker-compose-failure.log": 4,
+    "docker-compose-integration.log": 5,
+    "build-backend.log": 6,
+    "build-frontend.log": 6,
+    "validate-compose.log": 7,
+    "kubernetes-failure.log": 8,
+    "final-compose-state.log": 20,
+}
+
 
 ERROR_PATTERN = re.compile(
     r"""
@@ -70,6 +80,21 @@ ERROR_PATTERN = re.compile(
     |back-off
     |cannot
     |could\s*not
+    |unhealthy
+    |health\s*check
+    |healthcheck
+    |http\s*404
+    |\b404\b
+    |curl:\s*\(22\)
+    |manifest\s*unknown
+    |pull\s*access\s*denied
+    |failed\s*to\s*solve
+    |syntaxerror
+    |modulenotfounderror
+    |importerror
+    |crashloopbackoff
+    |imagepullbackoff
+    |errimagepull
     """,
     re.IGNORECASE | re.VERBOSE,
 )
@@ -437,18 +462,26 @@ def sanitize(text: str) -> str:
     return sanitized
 
 
-def extract_relevant_lines(lines: list[str]) -> list[str]:
+def extract_relevant_lines(
+    lines: list[str],
+    include_tail_when_no_error: bool = False,
+) -> list[str]:
     selected_indexes: set[int] = set()
 
     for index, line in enumerate(lines):
         if ERROR_PATTERN.search(line):
             start = max(0, index - CONTEXT_LINES)
-            end = min(len(lines), index + CONTEXT_LINES + 1)
-
+            end = min(
+                len(lines),
+                index + CONTEXT_LINES + 1,
+            )
             selected_indexes.update(range(start, end))
 
-    tail_start = max(0, len(lines) - TAIL_LINES)
-    selected_indexes.update(range(tail_start, len(lines)))
+    if not selected_indexes and include_tail_when_no_error:
+        tail_start = max(0, len(lines) - TAIL_LINES)
+        selected_indexes.update(
+            range(tail_start, len(lines))
+        )
 
     return [
         lines[index]
@@ -485,9 +518,13 @@ def collect_logs(logs_directory: Path) -> str:
             errors="replace",
         )
 
-        relevant = extract_relevant_lines(
-            raw_text.splitlines()
-        )
+        if log_file.name in ALWAYS_INCLUDE_LOGS:
+            relevant = raw_text.splitlines()
+        else:
+            relevant = extract_relevant_lines(
+                raw_text.splitlines(),
+                include_tail_when_no_error=False,
+            )
 
         if not relevant:
             continue
@@ -503,7 +540,6 @@ def collect_logs(logs_directory: Path) -> str:
 
         section = sanitize(section)
 
-        # Prevent one very large log from consuming the complete prompt.
         if len(section) > PER_LOG_CHARACTER_LIMIT:
             header, separator, content = section.partition("\n")
 
@@ -541,6 +577,31 @@ def collect_logs(logs_directory: Path) -> str:
         )
 
     return combined
+
+
+def high_signal_summary(log_text: str) -> str:
+    selected: list[str] = []
+
+    for line in log_text.splitlines():
+        stripped = line.strip()
+
+        if not stripped:
+            continue
+
+        if stripped.startswith("===== LOG FILE:"):
+            continue
+
+        if ERROR_PATTERN.search(stripped):
+            if stripped not in selected:
+                selected.append(stripped)
+
+        if len(selected) >= 30:
+            break
+
+    if not selected:
+        return "No high-signal error line was extracted."
+
+    return "\n".join(f"- {line}" for line in selected)
 
 
 def build_user_prompt(log_text: str) -> str:
@@ -583,6 +644,10 @@ Instructions:
 - Return confidence as a number between 0 and 1.
 - If the root cause cannot be proved, use
   analysis_status="insufficient_evidence" and confidence below 0.5.
+
+Pre-extracted high-signal error lines:
+
+{high_signal_summary(log_text)}
 
 Sanitized and reduced pipeline logs:
 
@@ -705,9 +770,19 @@ def normalize_confidence(value: Any) -> float:
     return max(0.0, min(confidence, 1.0))
 
 
+def normalize_for_match(value: str) -> str:
+    return re.sub(
+        r"\s+",
+        " ",
+        value.strip().lower(),
+    )
+
+
 def excerpt_is_grounded(excerpt: str, log_text: str) -> bool:
+    normalized_log = normalize_for_match(log_text)
+
     meaningful_lines = [
-        line.strip()
+        normalize_for_match(line)
         for line in excerpt.splitlines()
         if len(line.strip()) >= 8
     ]
@@ -716,9 +791,340 @@ def excerpt_is_grounded(excerpt: str, log_text: str) -> bool:
         return False
 
     return any(
-        line in log_text
+        line in normalized_log
         for line in meaningful_lines
     )
+
+
+def current_log_file(
+    lines: list[str],
+    index: int,
+) -> str:
+    for previous in range(index, -1, -1):
+        line = lines[previous].strip()
+
+        if (
+            line.startswith("===== LOG FILE:")
+            and line.endswith("=====")
+        ):
+            return (
+                line
+                .removeprefix("===== LOG FILE:")
+                .removesuffix("=====")
+                .strip()
+            )
+
+    return "pipeline logs"
+
+
+def find_matching_evidence(
+    log_text: str,
+    patterns: list[re.Pattern[str]],
+) -> tuple[str, str] | None:
+    lines = log_text.splitlines()
+
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+
+        if not stripped:
+            continue
+
+        if any(pattern.search(stripped) for pattern in patterns):
+            return current_log_file(lines, index), stripped
+
+    return None
+
+
+def base_fallback_result(
+    *,
+    stage: str,
+    component: str,
+    category: str,
+    summary: str,
+    root_cause: str,
+    log_file: str,
+    excerpt: str,
+    interpretation: str,
+    confidence: float,
+    checks: list[dict[str, str]],
+    remediation_steps: list[dict[str, str]],
+) -> dict[str, Any]:
+    return {
+        "analysis_status": "diagnosed",
+        "summary": summary,
+        "failed_stage": stage,
+        "failed_component": component,
+        "category": category,
+        "root_cause": root_cause,
+        "secondary_errors": [],
+        "evidence": [
+            {
+                "log_file": log_file,
+                "excerpt": excerpt,
+                "interpretation": interpretation,
+            }
+        ],
+        "checks": checks[:4],
+        "remediation_steps": remediation_steps[:4],
+        "prevention": [],
+        "missing_information": [],
+        "confidence": confidence,
+    }
+
+
+def deterministic_fallback(
+    log_text: str,
+) -> dict[str, Any] | None:
+    stage = os.getenv("LAST_STAGE", "unknown")
+
+    docker_daemon = find_matching_evidence(
+        log_text,
+        [
+            re.compile(
+                r"failed to connect to the docker api",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                r"cannot connect to the docker daemon",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                r"docker\.sock.*no such file",
+                re.IGNORECASE,
+            ),
+        ],
+    )
+
+    if docker_daemon:
+        log_file, excerpt = docker_daemon
+
+        return base_fallback_result(
+            stage=stage,
+            component="Docker daemon",
+            category="docker",
+            summary=(
+                "The pipeline could not communicate with the "
+                "Docker daemon."
+            ),
+            root_cause=(
+                "Docker Desktop or its WSL integration was not "
+                "available, so the Docker socket could not be used."
+            ),
+            log_file=log_file,
+            excerpt=excerpt,
+            interpretation=(
+                "This is the direct Docker API connection error "
+                "that caused the stage to fail."
+            ),
+            confidence=0.99,
+            checks=[
+                {
+                    "platform": "WSL",
+                    "command": "docker info",
+                    "purpose": (
+                        "Verify that the Jenkins WSL agent can "
+                        "reach the Docker daemon."
+                    ),
+                    "expected_result": (
+                        "Docker server information is returned "
+                        "without a socket connection error."
+                    ),
+                },
+                {
+                    "platform": "Windows PowerShell",
+                    "command": "docker version",
+                    "purpose": (
+                        "Verify that Docker Desktop is running "
+                        "on Windows."
+                    ),
+                    "expected_result": (
+                        "Both client and server versions are shown."
+                    ),
+                },
+            ],
+            remediation_steps=[
+                {
+                    "priority": "high",
+                    "action": (
+                        "Start Docker Desktop and verify that WSL "
+                        "integration is enabled for the Jenkins "
+                        "Ubuntu distribution."
+                    ),
+                    "command": "docker info",
+                    "risk": "safe",
+                }
+            ],
+        )
+
+    health_failure = find_matching_evidence(
+        log_text,
+        [
+            re.compile(r"\bunhealthy\b", re.IGNORECASE),
+            re.compile(r"curl:\s*\(22\)", re.IGNORECASE),
+            re.compile(r"\b404\b", re.IGNORECASE),
+            re.compile(
+                r"health\s*check.*fail",
+                re.IGNORECASE,
+            ),
+        ],
+    )
+
+    if health_failure:
+        log_file, excerpt = health_failure
+
+        return base_fallback_result(
+            stage=stage,
+            component="Docker Compose service health check",
+            category="docker_compose",
+            summary=(
+                "A Docker Compose service did not pass its "
+                "configured health check."
+            ),
+            root_cause=(
+                "The service health-check command or URL failed. "
+                "Inspect the recorded container health output to "
+                "identify the exact HTTP status or command error."
+            ),
+            log_file=log_file,
+            excerpt=excerpt,
+            interpretation=(
+                "This line directly shows the service health "
+                "failure observed by Docker Compose."
+            ),
+            confidence=0.90,
+            checks=[
+                {
+                    "platform": "Docker",
+                    "command": (
+                        "docker inspect <container> "
+                        "--format '{{json .State.Health}}'"
+                    ),
+                    "purpose": (
+                        "Read the exact health-check commands, "
+                        "exit codes, and output."
+                    ),
+                    "expected_result": (
+                        "The failing URL or command is visible in "
+                        "the latest health-check entry."
+                    ),
+                },
+                {
+                    "platform": "WSL",
+                    "command": (
+                        "docker compose ps --all"
+                    ),
+                    "purpose": (
+                        "Identify which Compose service is "
+                        "unhealthy."
+                    ),
+                    "expected_result": (
+                        "The affected service is marked unhealthy."
+                    ),
+                },
+            ],
+            remediation_steps=[
+                {
+                    "priority": "high",
+                    "action": (
+                        "Correct the failing health-check URL, "
+                        "port, path, or command and rerun the "
+                        "integration test."
+                    ),
+                    "command": (
+                        "docker compose config"
+                    ),
+                    "risk": "review_required",
+                }
+            ],
+        )
+
+    controlled_marker = (
+        "Controlled failure triggered to validate "
+        "Ollama analysis."
+    )
+
+    if (
+        os.getenv("FORCE_AI_FAILURE", "false").lower()
+        == "true"
+        and controlled_marker in log_text
+    ):
+        return base_fallback_result(
+            stage="Test AI Failure Analysis",
+            component="AI failure-analysis controlled test",
+            category="test_failure",
+            summary=(
+                "Jenkins intentionally generated a controlled "
+                "failure to validate the Ollama analysis."
+            ),
+            root_cause=(
+                "FORCE_AI_FAILURE was enabled and the test stage "
+                "intentionally exited with code 1."
+            ),
+            log_file="simulated-failure.log",
+            excerpt=controlled_marker,
+            interpretation=(
+                "This marker confirms that the failure was "
+                "intentional."
+            ),
+            confidence=1.0,
+            checks=[],
+            remediation_steps=[],
+        )
+
+    generic_patterns = [
+        re.compile(r"\berror\b", re.IGNORECASE),
+        re.compile(r"\bfailed\b", re.IGNORECASE),
+        re.compile(r"\bexception\b", re.IGNORECASE),
+        re.compile(r"traceback", re.IGNORECASE),
+        re.compile(r"exit\s*code\s*[1-9]", re.IGNORECASE),
+        re.compile(r"connection\s*refused", re.IGNORECASE),
+        re.compile(r"not\s*found", re.IGNORECASE),
+    ]
+
+    generic_failure = find_matching_evidence(
+        log_text,
+        generic_patterns,
+    )
+
+    if generic_failure:
+        log_file, excerpt = generic_failure
+
+        return base_fallback_result(
+            stage=stage,
+            component="Pipeline command",
+            category="unknown",
+            summary=(
+                "The pipeline failed while executing the last "
+                "recorded stage."
+            ),
+            root_cause=excerpt,
+            log_file=log_file,
+            excerpt=excerpt,
+            interpretation=(
+                "This is the first grounded high-signal failure "
+                "line available in the collected logs."
+            ),
+            confidence=0.70,
+            checks=[
+                {
+                    "platform": "Jenkins UI",
+                    "command": (
+                        "Open the failed stage console output."
+                    ),
+                    "purpose": (
+                        "Review the lines immediately before the "
+                        "reported failure."
+                    ),
+                    "expected_result": (
+                        "The failing command and its complete "
+                        "stderr output are visible."
+                    ),
+                }
+            ],
+            remediation_steps=[],
+        )
+
+    return None
 
 
 def normalize_result(
@@ -764,45 +1170,21 @@ def normalize_result(
 
     result["evidence"] = grounded_evidence[:3]
 
-    force_ai_failure = (
-        os.getenv("FORCE_AI_FAILURE", "false").lower()
-        == "true"
-    )
-    controlled_marker = (
-        "Controlled failure triggered to validate "
-        "Ollama analysis."
-    )
+    last_stage = os.getenv("LAST_STAGE", "unknown")
 
-    if force_ai_failure and controlled_marker in log_text:
-        result.update(
-            {
-                "analysis_status": "diagnosed",
-                "failed_stage": "Test AI Failure Analysis",
-                "failed_component": (
-                    "AI failure-analysis controlled test"
-                ),
-                "category": "test_failure",
-                "root_cause": (
-                    "Jenkins intentionally exited with code 1 "
-                    "because FORCE_AI_FAILURE was enabled."
-                ),
-                "confidence": 1.0,
-                "secondary_errors": [],
-                "evidence": [
-                    {
-                        "log_file": "simulated-failure.log",
-                        "excerpt": controlled_marker,
-                        "interpretation": (
-                            "This line confirms that the failure "
-                            "was intentionally generated to test "
-                            "the Ollama analysis."
-                        ),
-                    }
-                ],
-            }
-        )
+    if last_stage and last_stage != "unknown":
+        result["failed_stage"] = last_stage
 
-    if not result["evidence"]:
+    fallback = deterministic_fallback(log_text)
+
+    if (
+        result.get("analysis_status")
+        == "insufficient_evidence"
+        or not result["evidence"]
+    ):
+        if fallback is not None:
+            return fallback
+
         result["analysis_status"] = "insufficient_evidence"
         result["confidence"] = min(
             result["confidence"],
@@ -814,8 +1196,8 @@ def normalize_result(
         )
 
         message = (
-            "No model evidence excerpt could be verified "
-            "against the supplied logs."
+            "No grounded high-signal error could be extracted "
+            "from the supplied logs."
         )
 
         if message not in missing_information:
