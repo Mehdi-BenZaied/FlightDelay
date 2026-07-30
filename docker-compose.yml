@@ -202,39 +202,8 @@ services:
     networks:
       - flight-delay-network
 
-  ai-dashboard:
-    build:
-      context: ./ai-dashboard
-      dockerfile: Dockerfile
-    environment:
-      DASHBOARD_INGEST_TOKEN: ${DASHBOARD_INGEST_TOKEN:-}
-      HOST: "0.0.0.0"
-      PORT: "4173"
-    ports:
-      - "${DASHBOARD_PORT:-4173}:4173"
-    volumes:
-      - ai_dashboard_data:/app/.wrangler/state
-    healthcheck:
-      test:
-        - CMD
-        - node
-        - -e
-        - >-
-          fetch('http://127.0.0.1:4173/api/health')
-          .then(response => {
-            if (!response.ok) process.exit(1);
-          })
-          .catch(() => process.exit(1))
-      interval: 10s
-      timeout: 5s
-      retries: 18
-      start_period: 60s
-    restart: unless-stopped
-    networks:
-      - flight-delay-network
 
 volumes:
-  ai_dashboard_data:
   backend_data:
   redis_data:
   ollama_models:
