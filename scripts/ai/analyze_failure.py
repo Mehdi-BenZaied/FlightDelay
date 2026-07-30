@@ -14,9 +14,10 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_MODEL = "qwen2.5-coder:7b-instruct"
-MAX_LOG_CHARACTERS = 50_000
-CONTEXT_LINES = 6
+DEFAULT_MODEL = "qwen2.5-coder:3b-instruct"
+MAX_LOG_CHARACTERS = 15_000
+CONTEXT_LINES = 3
+TAIL_LINES = 50
 OLLAMA_REQUEST_TIMEOUT_SECONDS = int(
     os.getenv("OLLAMA_REQUEST_TIMEOUT_SECONDS", "2500")
 )
@@ -67,7 +68,7 @@ Environment you are analyzing:
 - Machine-learning files include ml/models/v1_model.json and
   data/flight_data.csv.
 - Ollama runs as a Docker Compose service on port 11434.
-- The default Ollama model is qwen2.5-coder:7b-instruct.
+- The default Ollama model is qwen2.5-coder:3b-instruct.
 - Docker Compose starts Redis, Ollama, backend, analytics, and frontend.
 - Images are built by Jenkins and may be pushed to Docker Hub.
 - Kubernetes deployment is optional and uses kind plus Helm.
@@ -132,6 +133,17 @@ Common environment-specific failures to recognize include:
 - Kubernetes probes use the wrong port or path.
 - Disk space, memory, or Docker build cache is exhausted.
 
+Keep the response concise so it can run efficiently on CPU-only hardware:
+
+- Return at most 3 secondary errors.
+- Return at most 3 evidence items.
+- Return at most 4 diagnostic checks.
+- Return at most 4 remediation steps.
+- Return at most 4 prevention items.
+- Return at most 4 missing-information items.
+- Avoid repeating the same error, explanation, or command.
+- Keep each explanation direct and brief.
+
 Return only structured JSON that follows the supplied JSON schema.
 """
 
@@ -173,10 +185,12 @@ OUTPUT_SCHEMA: dict[str, Any] = {
         "root_cause": {"type": "string"},
         "secondary_errors": {
             "type": "array",
+            "maxItems": 3,
             "items": {"type": "string"},
         },
         "evidence": {
             "type": "array",
+            "maxItems": 3,
             "items": {
                 "type": "object",
                 "properties": {
@@ -193,6 +207,7 @@ OUTPUT_SCHEMA: dict[str, Any] = {
         },
         "checks": {
             "type": "array",
+            "maxItems": 4,
             "items": {
                 "type": "object",
                 "properties": {
@@ -220,6 +235,7 @@ OUTPUT_SCHEMA: dict[str, Any] = {
         },
         "remediation_steps": {
             "type": "array",
+            "maxItems": 4,
             "items": {
                 "type": "object",
                 "properties": {
@@ -248,10 +264,12 @@ OUTPUT_SCHEMA: dict[str, Any] = {
         },
         "prevention": {
             "type": "array",
+            "maxItems": 4,
             "items": {"type": "string"},
         },
         "missing_information": {
             "type": "array",
+            "maxItems": 4,
             "items": {"type": "string"},
         },
         "confidence": {
@@ -370,7 +388,7 @@ def extract_relevant_lines(lines: list[str]) -> list[str]:
 
             selected_indexes.update(range(start, end))
 
-    tail_start = max(0, len(lines) - 120)
+    tail_start = max(0, len(lines) - TAIL_LINES)
     selected_indexes.update(range(tail_start, len(lines)))
 
     return [
@@ -458,11 +476,12 @@ def request_analysis(
     request_body = {
         "model": model,
         "stream": False,
-        "keep_alive": "10m",
+        "keep_alive": "30m",
         "format": OUTPUT_SCHEMA,
         "options": {
             "temperature": 0,
-            "num_ctx": 8192,
+            "num_ctx": 4096,
+            "num_predict": 600,
         },
         "messages": [
             {
@@ -603,6 +622,12 @@ def main() -> int:
     try:
         logs = collect_logs(Path(args.logs_dir))
         model = os.getenv("OLLAMA_MODEL", DEFAULT_MODEL)
+
+        print(f"Ollama model: {model}", flush=True)
+        print(
+            f"Reduced pipeline logs: {len(logs):,} characters",
+            flush=True,
+        )
         result = request_analysis(
             api_url=ollama_url(),
             model=model,
