@@ -313,6 +313,11 @@ def parse_args() -> argparse.Namespace:
         "--output-markdown",
         default="ai-failure-analysis.md",
     )
+    parser.add_argument(
+        "--output-raw",
+        default="ai-raw-response.txt",
+        help="File used to preserve the raw Ollama response.",
+    )
     return parser.parse_args()
 
 
@@ -472,6 +477,7 @@ def request_analysis(
     api_url: str,
     model: str,
     user_prompt: str,
+    raw_output_path: Path,
 ) -> dict[str, Any]:
     request_body = {
         "model": model,
@@ -481,7 +487,7 @@ def request_analysis(
         "options": {
             "temperature": 0,
             "num_ctx": 4096,
-            "num_predict": 600,
+            "num_predict": 1200,
         },
         "messages": [
             {
@@ -521,14 +527,49 @@ def request_analysis(
             f"Could not reach Ollama at {api_url}: {error}"
         ) from error
 
-    content = payload.get("message", {}).get("content")
+    content = payload.get("message", {}).get("content", "")
+    done_reason = payload.get("done_reason", "unknown")
+    prompt_eval_count = payload.get(
+        "prompt_eval_count",
+        "unknown",
+    )
+    eval_count = payload.get("eval_count", "unknown")
 
-    if not content:
+    print(f"Ollama done reason: {done_reason}", flush=True)
+    print(
+        f"Ollama prompt tokens: {prompt_eval_count}",
+        flush=True,
+    )
+    print(
+        f"Ollama generated tokens: {eval_count}",
+        flush=True,
+    )
+
+    raw_output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    raw_output_path.write_text(
+        content,
+        encoding="utf-8",
+    )
+
+    if not content.strip():
         raise RuntimeError(
-            "Ollama returned no message content."
+            "Ollama returned no message content. "
+            f"Raw response saved to {raw_output_path}."
         )
 
-    return json.loads(content)
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError as error:
+        raise RuntimeError(
+            "Ollama returned invalid JSON. "
+            f"done_reason={done_reason}, "
+            f"eval_count={eval_count}, "
+            f"JSON error={error}. "
+            f"Raw response saved to {raw_output_path}."
+        ) from error
 
 
 def render_markdown(result: dict[str, Any]) -> str:
@@ -628,10 +669,13 @@ def main() -> int:
             f"Reduced pipeline logs: {len(logs):,} characters",
             flush=True,
         )
+        raw_output_path = Path(args.output_raw)
+
         result = request_analysis(
             api_url=ollama_url(),
             model=model,
             user_prompt=build_user_prompt(logs),
+            raw_output_path=raw_output_path,
         )
 
         Path(args.output_json).write_text(
