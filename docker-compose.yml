@@ -63,7 +63,7 @@ services:
 
     environment:
       OLLAMA_HOST: "http://ollama:11434"
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:3b-instruct}
 
     entrypoint:
       - /bin/sh
@@ -115,8 +115,8 @@ services:
 
       OLLAMA_BASE_URL: "http://ollama:11434"
       OLLAMA_HOST: "http://ollama:11434"
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}
-      DEFAULT_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:3b-instruct}
+      DEFAULT_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:3b-instruct}
 
     command:
       - python
@@ -180,8 +180,8 @@ services:
 
       OLLAMA_BASE_URL: "http://ollama:11434"
       OLLAMA_HOST: "http://ollama:11434"
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}
-      DEFAULT_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:3b-instruct}
+      DEFAULT_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:3b-instruct}
 
     command:
       - python
