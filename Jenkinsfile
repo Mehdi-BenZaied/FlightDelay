@@ -591,6 +591,32 @@ PYTHON_OLLAMA_CHECK
                               ps --all || true
 
                             echo
+                            echo '===== Container state and health details ====='
+
+                            docker ps -a \
+                              --filter "label=com.docker.compose.project=$CI_PROJECT" \
+                              --format '{{.Names}}' |
+                            while read -r container
+                            do
+                                [ -n "$container" ] || continue
+
+                                echo
+                                echo "===== Container: $container ====="
+
+                                docker inspect "$container" \
+                                  --format 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} Error={{.State.Error}}' \
+                                  || true
+
+                                docker inspect "$container" \
+                                  --format '{{if .State.Health}}Health={{.State.Health.Status}}{{else}}Health=not-configured{{end}}' \
+                                  || true
+
+                                docker inspect "$container" \
+                                  --format '{{if .State.Health}}{{range .State.Health.Log}}Started={{.Start}} ExitCode={{.ExitCode}}{{println}}{{.Output}}{{println}}{{end}}{{end}}' \
+                                  || true
+                            done
+
+                            echo
                             echo '===== Ollama and backend logs ====='
                             docker compose \
                               --project-name "$CI_PROJECT" \
@@ -609,6 +635,33 @@ PYTHON_OLLAMA_CHECK
                               --no-color \
                               --timestamps || true
                         } 2>&1 | tee "$CI_LOGS_DIR/docker-compose-failure.log"
+
+                        {
+                            echo '===== Docker Compose health summary ====='
+
+                            docker ps -a \
+                              --filter "label=com.docker.compose.project=$CI_PROJECT" \
+                              --format '{{.Names}}' |
+                            while read -r container
+                            do
+                                [ -n "$container" ] || continue
+
+                                echo
+                                echo "Container=$container"
+
+                                docker inspect "$container" \
+                                  --format 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} Error={{.State.Error}}' \
+                                  || true
+
+                                docker inspect "$container" \
+                                  --format '{{if .State.Health}}Health={{.State.Health.Status}}{{else}}Health=not-configured{{end}}' \
+                                  || true
+
+                                docker inspect "$container" \
+                                  --format '{{if .State.Health}}{{range .State.Health.Log}}ExitCode={{.ExitCode}}{{println}}{{.Output}}{{println}}{{end}}{{end}}' \
+                                  || true
+                            done
+                        } > "$CI_LOGS_DIR/docker-compose-health.log" 2>&1
                     '''
                 }
 
@@ -1184,6 +1237,35 @@ PYTHON_OLLAMA_CHECK
                                 echo 'Reason: Docker daemon is unavailable.'
                             } > "$LOGS_PATH/final-compose-state.log"
                         fi
+
+                        {
+                            echo "Last entered stage: ${LAST_STAGE:-unknown}"
+                            echo "Build result: FAILURE"
+                            echo
+
+                            echo '===== High-signal pipeline errors ====='
+
+                            for log_file in "$LOGS_PATH"/*.log
+                            do
+                                [ -f "$log_file" ] || continue
+
+                                case "$(basename "$log_file")" in
+                                    ai-*|ollama-*)
+                                        continue
+                                        ;;
+                                esac
+
+                                grep \
+                                  --with-filename \
+                                  --line-number \
+                                  --extended-regexp \
+                                  --ignore-case \
+                                  'failed|failure|error|fatal|exception|traceback|unhealthy|health.?check|curl:.*\\(22\\)|404|connection refused|not found|no such file|timeout|timed out|denied|forbidden|exit code [1-9]|crashloop|imagepull|back-off|cannot|could not' \
+                                  "$log_file" \
+                                  || true
+                            done |
+                              head -n 250
+                        } > "$LOGS_PATH/failure-summary.log" 2>&1
 
                         ANALYSIS_OLLAMA_URL=''
 
