@@ -39,6 +39,12 @@ pipeline {
             defaultValue: '2500',
             description: 'Maximum time to wait for the Ollama analysis response'
         )
+
+        string(
+            name: 'OLLAMA_EXTERNAL_URL',
+            defaultValue: '',
+            description: 'Optional external Ollama /api/chat URL used when Docker is unavailable'
+        )
     }
 
     options {
@@ -62,6 +68,7 @@ pipeline {
         OLLAMA_BASE_URL      = 'http://ollama:11434'
         OLLAMA_MODEL         = 'qwen2.5-coder:3b-instruct'
         OLLAMA_MODELS_VOLUME = 'flight-delay-ollama-models'
+        AI_OLLAMA_HOST_PORT   = '11435'
 
         AI_FALLBACK_ANALYZER_IMAGE = 'python:3.12-alpine'
         AI_SCRIPT         = 'scripts/ai/analyze_failure.py'
@@ -1068,6 +1075,7 @@ PYTHON_OLLAMA_CHECK
                         AI_OLLAMA_CONTAINER="${PROJECT}-ai-ollama"
                         AI_SCRIPT_HOST="$WORKSPACE_ROOT/$AI_SCRIPT"
                         LOGS_PATH="$WORKSPACE_ROOT/$CI_LOGS_DIR"
+                        EXTERNAL_URL="${OLLAMA_EXTERNAL_URL:-}"
 
                         mkdir -p "$LOGS_PATH"
 
@@ -1108,7 +1116,7 @@ PYTHON_OLLAMA_CHECK
                             else
                                 rm -f "$CONSOLE_TMP"
 
-                                echo 'Jenkins console log could not be downloaded; using stage-specific logs.' \
+                                echo 'Jenkins console log could not be downloaded; using diagnostic and stage logs.' \
                                   >> "$LOGS_PATH/pipeline-context.log"
                             fi
                         fi
@@ -1118,238 +1126,274 @@ PYTHON_OLLAMA_CHECK
                                 echo 'AI failure analysis was skipped.'
                                 echo 'The analyzer script was not found in the checked-out workspace.'
                                 echo "Expected file: $AI_SCRIPT_HOST"
-                                echo 'Files found under scripts/:'
-                                find "$WORKSPACE_ROOT/scripts" \
-                                  -maxdepth 4 \
-                                  -type f \
-                                  -print 2>/dev/null |
-                                  sort || true
                             } | tee "$LOGS_PATH/ai-analysis-error.log"
 
                             exit 0
                         fi
 
                         {
-                            echo '===== Final Docker Compose state ====='
-                            docker compose \
-                              --project-name "$PROJECT" \
-                              --file "$WORKSPACE_ROOT/$COMPOSE_FILE" \
-                              ps --all || true
-
+                            echo '===== Docker daemon diagnostic ====='
+                            echo "Checked at: $(date --iso-8601=seconds)"
                             echo
-                            echo '===== Final Docker Compose logs ====='
+                            docker version
+                            echo
+                            docker info
+                        } > "$LOGS_PATH/docker-daemon-check.log" 2>&1
+
+                        if docker info > /dev/null 2>&1; then
+                            DOCKER_AVAILABLE=true
+                            echo 'Docker daemon is available.' |
+                              tee -a "$LOGS_PATH/pipeline-context.log"
+                        else
+                            DOCKER_AVAILABLE=false
+                            {
+                                echo 'Docker daemon is unavailable.'
+                                echo 'The original Docker error is stored in docker-daemon-check.log.'
+                                echo 'AI analysis will use an Ollama service running outside Docker.'
+                            } | tee -a "$LOGS_PATH/pipeline-context.log"
+                        fi
+
+                        if [ "$DOCKER_AVAILABLE" = true ]; then
+                            {
+                                echo '===== Final Docker Compose state ====='
+                                docker compose \
+                                  --project-name "$PROJECT" \
+                                  --file "$WORKSPACE_ROOT/$COMPOSE_FILE" \
+                                  ps --all || true
+
+                                echo
+                                echo '===== Final Docker Compose logs ====='
+                                docker compose \
+                                  --project-name "$PROJECT" \
+                                  --file "$WORKSPACE_ROOT/$COMPOSE_FILE" \
+                                  logs \
+                                  --no-color \
+                                  --timestamps || true
+                            } > "$LOGS_PATH/final-compose-state.log" 2>&1
+
                             docker compose \
                               --project-name "$PROJECT" \
                               --file "$WORKSPACE_ROOT/$COMPOSE_FILE" \
-                              logs \
-                              --no-color \
-                              --timestamps || true
-                        } > "$LOGS_PATH/final-compose-state.log" 2>&1
-
-                        docker compose \
-                          --project-name "$PROJECT" \
-                          --file "$WORKSPACE_ROOT/$COMPOSE_FILE" \
-                          down \
-                          --volumes \
-                          --remove-orphans \
-                          > /dev/null 2>&1 || true
-
-                        docker rm -f "$AI_OLLAMA_CONTAINER" \
-                          > /dev/null 2>&1 || true
-                        docker network rm "$AI_NETWORK" \
-                          > /dev/null 2>&1 || true
-
-                        docker volume inspect "$OLLAMA_MODELS_VOLUME" \
-                          > /dev/null 2>&1 ||
-                          docker volume create "$OLLAMA_MODELS_VOLUME" \
-                          > /dev/null
-
-                        if ! docker network create "$AI_NETWORK" \
-                          > /dev/null 2>&1
-                        then
-                            echo 'Could not create the isolated AI Docker network.' |
-                              tee "$LOGS_PATH/ai-analysis-error.log"
-                            exit 0
-                        fi
-
-                        if ! docker run \
-                          --detach \
-                          --name "$AI_OLLAMA_CONTAINER" \
-                          --network "$AI_NETWORK" \
-                          --env OLLAMA_HOST=0.0.0.0:11434 \
-                          --env OLLAMA_KEEP_ALIVE=30m \
-                          --volume "$OLLAMA_MODELS_VOLUME:/root/.ollama" \
-                          "$OLLAMA_IMAGE" \
-                          > /dev/null
-                        then
-                            echo 'Could not start the isolated Ollama container.' |
-                              tee "$LOGS_PATH/ai-analysis-error.log"
-                            exit 0
-                        fi
-
-                        ollama_ready=false
-
-                        for attempt in $(seq 1 60); do
-                            if docker exec "$AI_OLLAMA_CONTAINER" \
-                              ollama list > /dev/null 2>&1
-                            then
-                                ollama_ready=true
-                                break
-                            fi
-
-                            sleep 2
-                        done
-
-                        if [ "$ollama_ready" != true ]; then
-                            echo 'Ollama did not become ready for AI analysis.' |
-                              tee "$LOGS_PATH/ai-analysis-error.log"
-
-                            docker logs "$AI_OLLAMA_CONTAINER" \
-                              >> "$LOGS_PATH/ai-analysis-error.log" \
-                              2>&1 || true
-
-                            exit 0
-                        fi
-
-                        echo "Preparing Ollama model: $MODEL"
-
-                        if ! docker exec "$AI_OLLAMA_CONTAINER" \
-                          ollama pull "$MODEL" \
-                          2>&1 |
-                          tee "$LOGS_PATH/ollama-model-pull.log"
-                        then
-                            echo 'The Ollama model could not be prepared.' |
-                              tee "$LOGS_PATH/ai-analysis-error.log"
-                            exit 0
-                        fi
-
-                        ANALYZER_IMAGE=''
-
-                        if [ -n "${BACKEND_REF:-}" ] &&
-                           docker image inspect "$BACKEND_REF" > /dev/null 2>&1
-                        then
-                            ANALYZER_IMAGE="$BACKEND_REF"
-                            echo "Using the already-built backend image for AI analysis: $ANALYZER_IMAGE"
-                        elif docker image inspect "$AI_FALLBACK_ANALYZER_IMAGE" \
-                          > /dev/null 2>&1
-                        then
-                            ANALYZER_IMAGE="$AI_FALLBACK_ANALYZER_IMAGE"
-                            echo "Using cached fallback analyzer image: $ANALYZER_IMAGE"
+                              down \
+                              --volumes \
+                              --remove-orphans \
+                              > /dev/null 2>&1 || true
                         else
                             {
-                                echo 'AI failure analysis was skipped.'
-                                echo 'No local Python-capable analyzer image is available.'
-                                echo "Expected backend image: ${BACKEND_REF:-not-defined}"
-                                echo "Fallback image is not cached: $AI_FALLBACK_ANALYZER_IMAGE"
-                                echo 'The pipeline intentionally avoids pulling a new image after a failure.'
-                            } | tee "$LOGS_PATH/ai-analysis-error.log"
-                            exit 0
+                                echo 'Docker Compose state could not be collected.'
+                                echo 'Reason: Docker daemon is unavailable.'
+                            } > "$LOGS_PATH/final-compose-state.log"
                         fi
 
-                        echo 'Running a real Ollama request before the failure analysis...'
+                        ANALYSIS_OLLAMA_URL=''
 
-                        timeout 1200 docker run \
-                          --rm \
-                          --network "$AI_NETWORK" \
-                          --env "OLLAMA_URL=http://${AI_OLLAMA_CONTAINER}:11434/api/chat" \
-                          --env "OLLAMA_MODEL=$MODEL" \
-                          --entrypoint python \
-                          "$ANALYZER_IMAGE" \
-                          - <<'PYTHON_AI_PREFLIGHT' \
-                          2>&1 | tee "$LOGS_PATH/ai-model-preflight.log"
+                        if [ "$DOCKER_AVAILABLE" = true ]; then
+                            docker rm -f "$AI_OLLAMA_CONTAINER" \
+                              > /dev/null 2>&1 || true
+
+                            docker network rm "$AI_NETWORK" \
+                              > /dev/null 2>&1 || true
+
+                            docker volume inspect "$OLLAMA_MODELS_VOLUME" \
+                              > /dev/null 2>&1 ||
+                              docker volume create "$OLLAMA_MODELS_VOLUME" \
+                              > /dev/null
+
+                            if ! docker network create "$AI_NETWORK" \
+                              > /dev/null 2>&1
+                            then
+                                echo 'Could not create the isolated AI Docker network.' |
+                                  tee "$LOGS_PATH/ai-analysis-error.log"
+                                exit 0
+                            fi
+
+                            if ! docker run \
+                              --detach \
+                              --name "$AI_OLLAMA_CONTAINER" \
+                              --network "$AI_NETWORK" \
+                              --publish "127.0.0.1:${AI_OLLAMA_HOST_PORT}:11434" \
+                              --env OLLAMA_HOST=0.0.0.0:11434 \
+                              --env OLLAMA_KEEP_ALIVE=30m \
+                              --volume "$OLLAMA_MODELS_VOLUME:/root/.ollama" \
+                              "$OLLAMA_IMAGE" \
+                              > /dev/null
+                            then
+                                echo 'Could not start the isolated Ollama container.' |
+                                  tee "$LOGS_PATH/ai-analysis-error.log"
+                                exit 0
+                            fi
+
+                            ollama_ready=false
+
+                            for attempt in $(seq 1 60); do
+                                if curl \
+                                  --fail \
+                                  --silent \
+                                  --show-error \
+                                  "http://127.0.0.1:${AI_OLLAMA_HOST_PORT}/api/tags" \
+                                  > /dev/null 2>&1
+                                then
+                                    ollama_ready=true
+                                    break
+                                fi
+
+                                sleep 2
+                            done
+
+                            if [ "$ollama_ready" != true ]; then
+                                echo 'Ollama did not become ready for AI analysis.' |
+                                  tee "$LOGS_PATH/ai-analysis-error.log"
+
+                                docker logs "$AI_OLLAMA_CONTAINER" \
+                                  >> "$LOGS_PATH/ai-analysis-error.log" \
+                                  2>&1 || true
+
+                                exit 0
+                            fi
+
+                            echo "Preparing Ollama model in Docker: $MODEL"
+
+                            if ! docker exec "$AI_OLLAMA_CONTAINER" \
+                              ollama pull "$MODEL" \
+                              2>&1 |
+                              tee "$LOGS_PATH/ollama-model-pull.log"
+                            then
+                                echo 'The Ollama model could not be prepared.' |
+                                  tee "$LOGS_PATH/ai-analysis-error.log"
+                                exit 0
+                            fi
+
+                            ANALYSIS_OLLAMA_URL="http://127.0.0.1:${AI_OLLAMA_HOST_PORT}/api/chat"
+                        else
+                            if [ -n "$EXTERNAL_URL" ]; then
+                                ANALYSIS_OLLAMA_URL="$EXTERNAL_URL"
+                            else
+                                WINDOWS_HOST_IP="$(
+                                  ip route show default 2> /dev/null |
+                                  awk '/default/ {print $3; exit}'
+                                )"
+
+                                if [ -z "$WINDOWS_HOST_IP" ]; then
+                                    {
+                                        echo 'AI failure analysis could not run.'
+                                        echo 'Docker is unavailable and the Windows host IP could not be detected.'
+                                        echo 'Set OLLAMA_EXTERNAL_URL to an Ollama /api/chat endpoint.'
+                                    } | tee "$LOGS_PATH/ai-analysis-error.log"
+
+                                    exit 0
+                                fi
+
+                                ANALYSIS_OLLAMA_URL="http://${WINDOWS_HOST_IP}:11434/api/chat"
+                            fi
+
+                            echo "Using external Ollama endpoint: $ANALYSIS_OLLAMA_URL" |
+                              tee -a "$LOGS_PATH/pipeline-context.log"
+
+                            timeout "$OLLAMA_REQUEST_TIMEOUT_SECONDS" \
+                              env \
+                                OLLAMA_URL="$ANALYSIS_OLLAMA_URL" \
+                                OLLAMA_MODEL="$MODEL" \
+                                OLLAMA_REQUEST_TIMEOUT_SECONDS="$OLLAMA_REQUEST_TIMEOUT_SECONDS" \
+                              python3 - <<'PYTHON_PREPARE_EXTERNAL' \
+                              2>&1 | tee "$LOGS_PATH/ollama-external-check.log"
 import json
 import os
-import sys
 import urllib.request
 
-url = os.environ["OLLAMA_URL"]
+chat_url = os.environ["OLLAMA_URL"].rstrip("/")
 model = os.environ["OLLAMA_MODEL"]
-
-payload = {
-    "model": model,
-    "stream": False,
-    "keep_alive": "30m",
-    "options": {
-        "temperature": 0,
-        "num_ctx": 4096,
-        "num_predict": 4,
-    },
-    "messages": [
-        {
-            "role": "user",
-            "content": "Reply only with READY",
-        }
-    ],
-}
-
-print(f"Ollama preflight URL: {url}", flush=True)
-print(f"Ollama preflight model: {model}", flush=True)
-print("Loading the model; this can take several minutes on CPU...", flush=True)
-
-request = urllib.request.Request(
-    url,
-    data=json.dumps(payload).encode("utf-8"),
-    headers={"Content-Type": "application/json"},
-    method="POST",
+timeout_seconds = int(
+    os.environ["OLLAMA_REQUEST_TIMEOUT_SECONDS"]
 )
 
-with urllib.request.urlopen(request, timeout=1100) as response:
-    result = json.loads(response.read().decode("utf-8"))
+if not chat_url.endswith("/api/chat"):
+    raise SystemExit(
+        "OLLAMA_EXTERNAL_URL must end with /api/chat"
+    )
 
-content = result.get("message", {}).get("content", "").strip()
+base_url = chat_url[:-len("/api/chat")]
+tags_url = f"{base_url}/api/tags"
+pull_url = f"{base_url}/api/pull"
 
-if not content:
-    print("ERROR: Ollama returned no message content.", file=sys.stderr)
-    raise SystemExit(1)
+print(f"Checking external Ollama: {tags_url}", flush=True)
 
-print(f"Ollama preflight response: {content}", flush=True)
-print("Ollama model preflight succeeded.", flush=True)
-PYTHON_AI_PREFLIGHT
+with urllib.request.urlopen(
+    tags_url,
+    timeout=30,
+) as response:
+    tags = json.loads(response.read().decode("utf-8"))
 
-                        PREFLIGHT_EXIT_CODE="${PIPESTATUS[0]}"
+models = {
+    item.get("name", "")
+    for item in tags.get("models", [])
+}
 
-                        if [ "$PREFLIGHT_EXIT_CODE" -ne 0 ]; then
-                            echo "Ollama model preflight failed with code $PREFLIGHT_EXIT_CODE." |
-                              tee "$LOGS_PATH/ai-analysis-error.log"
+if model not in models:
+    print(
+        f"Model {model} is not installed. Pulling it now...",
+        flush=True,
+    )
 
-                            docker logs "$AI_OLLAMA_CONTAINER" \
-                              >> "$LOGS_PATH/ai-analysis-error.log" \
-                              2>&1 || true
+    request = urllib.request.Request(
+        pull_url,
+        data=json.dumps(
+            {
+                "model": model,
+                "stream": False,
+            }
+        ).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
 
-                            exit 0
+    with urllib.request.urlopen(
+        request,
+        timeout=timeout_seconds,
+    ) as response:
+        response.read()
+
+print(f"External Ollama model is ready: {model}", flush=True)
+PYTHON_PREPARE_EXTERNAL
+
+                            EXTERNAL_CHECK_EXIT_CODE="${PIPESTATUS[0]}"
+
+                            if [ "$EXTERNAL_CHECK_EXIT_CODE" -ne 0 ]; then
+                                {
+                                    echo 'AI failure analysis could not use the external Ollama service.'
+                                    echo "Endpoint: $ANALYSIS_OLLAMA_URL"
+                                    echo 'Start Ollama outside Docker or set OLLAMA_EXTERNAL_URL correctly.'
+                                } | tee "$LOGS_PATH/ai-analysis-error.log"
+
+                                exit 0
+                            fi
                         fi
 
-                        echo 'Ollama works. Running analyze_failure.py with the real pipeline logs...'
+                        echo 'Running analyze_failure.py with the collected pipeline logs...'
+                        echo "Ollama URL: $ANALYSIS_OLLAMA_URL"
                         echo "Ollama analysis timeout: ${OLLAMA_REQUEST_TIMEOUT_SECONDS} seconds"
 
                         ANALYZER_COMMAND_TIMEOUT="$((OLLAMA_REQUEST_TIMEOUT_SECONDS + 120))"
 
-                        timeout "$ANALYZER_COMMAND_TIMEOUT" docker run \
-                          --rm \
-                          --user "$(id -u):$(id -g)" \
-                          --network "$AI_NETWORK" \
-                          --mount "type=bind,source=$WORKSPACE_ROOT,target=/workspace" \
-                          --workdir /workspace \
-                          --env "OLLAMA_URL=http://${AI_OLLAMA_CONTAINER}:11434/api/chat" \
-                          --env "OLLAMA_MODEL=$MODEL" \
-                          --env "OLLAMA_REQUEST_TIMEOUT_SECONDS=$OLLAMA_REQUEST_TIMEOUT_SECONDS" \
-                          --env "LAST_STAGE=${LAST_STAGE:-unknown}" \
-                          --env BUILD_RESULT=FAILURE \
-                          --env "FORCE_AI_FAILURE=${FORCE_AI_FAILURE:-false}" \
-                          --env "JOB_NAME=${JOB_NAME:-unknown}" \
-                          --env "BUILD_NUMBER=${BUILD_NUMBER:-unknown}" \
-                          --env "BUILD_URL=${BUILD_URL:-unknown}" \
-                          --env "SOURCE_BRANCH=${SOURCE_BRANCH:-${BRANCH_NAME:-unknown}}" \
-                          --env "SHORT_SHA=${SHORT_SHA:-unknown}" \
-                          --env "NODE_NAME=${NODE_NAME:-unknown}" \
-                          --env WORKSPACE=/workspace \
-                          --entrypoint python \
-                          "$ANALYZER_IMAGE" \
-                          /workspace/scripts/ai/analyze_failure.py \
-                            --logs-dir /workspace/ci-logs \
-                            --output-json /workspace/ai-failure-analysis.json \
-                            --output-markdown /workspace/ai-failure-analysis.md \
-                            --output-raw /workspace/ai-raw-response.txt \
+                        timeout "$ANALYZER_COMMAND_TIMEOUT" \
+                          env \
+                            OLLAMA_URL="$ANALYSIS_OLLAMA_URL" \
+                            OLLAMA_MODEL="$MODEL" \
+                            OLLAMA_REQUEST_TIMEOUT_SECONDS="$OLLAMA_REQUEST_TIMEOUT_SECONDS" \
+                            LAST_STAGE="${LAST_STAGE:-unknown}" \
+                            BUILD_RESULT=FAILURE \
+                            FORCE_AI_FAILURE="${FORCE_AI_FAILURE:-false}" \
+                            JOB_NAME="${JOB_NAME:-unknown}" \
+                            BUILD_NUMBER="${BUILD_NUMBER:-unknown}" \
+                            BUILD_URL="${BUILD_URL:-unknown}" \
+                            SOURCE_BRANCH="${SOURCE_BRANCH:-${BRANCH_NAME:-unknown}}" \
+                            SHORT_SHA="${SHORT_SHA:-unknown}" \
+                            NODE_NAME="${NODE_NAME:-unknown}" \
+                            WORKSPACE="$WORKSPACE_ROOT" \
+                          python3 "$AI_SCRIPT_HOST" \
+                            --logs-dir "$LOGS_PATH" \
+                            --output-json "$WORKSPACE_ROOT/$AI_OUTPUT_JSON" \
+                            --output-markdown "$WORKSPACE_ROOT/$AI_OUTPUT_MD" \
+                            --output-raw "$WORKSPACE_ROOT/$AI_OUTPUT_RAW" \
                           2>&1 |
                           tee "$LOGS_PATH/ai-analysis-run.log"
 
@@ -1358,6 +1402,7 @@ PYTHON_AI_PREFLIGHT
                         if [ "$ANALYSIS_EXIT_CODE" -ne 0 ]; then
                             echo "AI analyzer exited with code $ANALYSIS_EXIT_CODE." |
                               tee "$LOGS_PATH/ai-analysis-error.log"
+
                             exit 0
                         fi
 
@@ -1366,6 +1411,7 @@ PYTHON_AI_PREFLIGHT
                         then
                             echo 'The AI analyzer finished but did not create both reports.' |
                               tee "$LOGS_PATH/ai-analysis-error.log"
+
                             exit 0
                         fi
 
@@ -1375,6 +1421,7 @@ PYTHON_AI_PREFLIGHT
                         then
                             echo 'The generated AI JSON report is invalid.' |
                               tee "$LOGS_PATH/ai-analysis-error.log"
+
                             exit 0
                         fi
 
