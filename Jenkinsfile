@@ -78,9 +78,10 @@ pipeline {
         AI_OUTPUT_RAW     = 'ai-raw-response.txt'
 
         AI_DASHBOARD_COMPOSE_FILE = 'ai-dashboard/docker-compose.dashboard.yml'
+        AI_DASHBOARD_ENV_FILE     = 'ai-dashboard/.env'
         AI_DASHBOARD_PROJECT      = 'flight-delay-ai-dashboard'
         AI_DASHBOARD_SERVICE      = 'flightdelay-ai-dashboard'
-        AI_DASHBOARD_URL          = 'http://127.0.0.1:4173'
+        AI_DASHBOARD_URL          = 'http://localhost:4173'
         AI_DASHBOARD_PORT         = '4173'
 
         CI_LOGS_DIR = 'ci-logs'
@@ -326,20 +327,30 @@ pipeline {
 
                     WORKSPACE_ROOT="$(pwd -P)"
                     DASHBOARD_COMPOSE="$WORKSPACE_ROOT/$AI_DASHBOARD_COMPOSE_FILE"
+                    DASHBOARD_ENV="$WORKSPACE_ROOT/$AI_DASHBOARD_ENV_FILE"
 
                     mkdir -p "$CI_LOGS_DIR"
+                    mkdir -p "$(dirname "$DASHBOARD_ENV")"
+
+                    umask 077
+                    {
+                        printf 'DASHBOARD_PORT=%s\n' "$AI_DASHBOARD_PORT"
+                        printf 'DASHBOARD_INGEST_TOKEN=%s\n' "${AI_DASHBOARD_TOKEN:-}"
+                    } > "$DASHBOARD_ENV"
 
                     export DASHBOARD_PORT="$AI_DASHBOARD_PORT"
                     export DASHBOARD_INGEST_TOKEN="${AI_DASHBOARD_TOKEN:-}"
 
                     echo '===== Starting the persistent AI dashboard ====='
                     echo "Compose file: $DASHBOARD_COMPOSE"
+                    echo "Environment file: $DASHBOARD_ENV"
                     echo "Compose project: $AI_DASHBOARD_PROJECT"
                     echo "Service: $AI_DASHBOARD_SERVICE"
                     echo "URL: $AI_DASHBOARD_URL"
 
                     docker compose \
                       --project-name "$AI_DASHBOARD_PROJECT" \
+                      --env-file "$DASHBOARD_ENV" \
                       --file "$DASHBOARD_COMPOSE" \
                       up \
                       --detach \
@@ -374,6 +385,7 @@ pipeline {
 
                         docker compose \
                           --project-name "$AI_DASHBOARD_PROJECT" \
+                          --env-file "$DASHBOARD_ENV" \
                           --file "$DASHBOARD_COMPOSE" \
                           ps --all \
                           2>&1 |
@@ -381,6 +393,7 @@ pipeline {
 
                         docker compose \
                           --project-name "$AI_DASHBOARD_PROJECT" \
+                          --env-file "$DASHBOARD_ENV" \
                           --file "$DASHBOARD_COMPOSE" \
                           logs \
                           --no-color \
@@ -398,6 +411,7 @@ pipeline {
 
                     docker compose \
                       --project-name "$AI_DASHBOARD_PROJECT" \
+                      --env-file "$DASHBOARD_ENV" \
                       --file "$DASHBOARD_COMPOSE" \
                       ps
 
@@ -1632,9 +1646,17 @@ PYTHON_PREPARE_EXTERNAL
 
                                 WORKSPACE_ROOT="$(pwd -P)"
                                 DASHBOARD_COMPOSE="$WORKSPACE_ROOT/$AI_DASHBOARD_COMPOSE_FILE"
+                                DASHBOARD_ENV="$WORKSPACE_ROOT/$AI_DASHBOARD_ENV_FILE"
                                 PUBLISH_SCRIPT="$WORKSPACE_ROOT/$AI_PUBLISH_SCRIPT"
 
                                 mkdir -p "$CI_LOGS_DIR"
+                                mkdir -p "$(dirname "$DASHBOARD_ENV")"
+
+                                umask 077
+                                {
+                                    printf 'DASHBOARD_PORT=%s\n' "$AI_DASHBOARD_PORT"
+                                    printf 'DASHBOARD_INGEST_TOKEN=%s\n' "${AI_DASHBOARD_TOKEN:-}"
+                                } > "$DASHBOARD_ENV"
 
                                 export DASHBOARD_PORT="$AI_DASHBOARD_PORT"
                                 export DASHBOARD_INGEST_TOKEN="${AI_DASHBOARD_TOKEN:-}"
@@ -1658,6 +1680,7 @@ PYTHON_PREPARE_EXTERNAL
 
                                     docker compose \
                                       --project-name "$AI_DASHBOARD_PROJECT" \
+                                      --env-file "$DASHBOARD_ENV" \
                                       --file "$DASHBOARD_COMPOSE" \
                                       up \
                                       --detach \
@@ -1691,6 +1714,7 @@ PYTHON_PREPARE_EXTERNAL
 
                                     docker compose \
                                       --project-name "$AI_DASHBOARD_PROJECT" \
+                                      --env-file "$DASHBOARD_ENV" \
                                       --file "$DASHBOARD_COMPOSE" \
                                       logs \
                                       --no-color \
@@ -1781,7 +1805,7 @@ PYTHON_PREPARE_EXTERNAL
                   > /dev/null 2>&1 || true
             '''
 
-            echo 'The dedicated AI dashboard remains running on http://127.0.0.1:4173.'
+            echo 'The dedicated AI dashboard remains running on http://localhost:4173.'
             cleanWs()
         }
     }
