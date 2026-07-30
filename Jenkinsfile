@@ -76,8 +76,14 @@ pipeline {
         AI_OUTPUT_JSON    = 'ai-failure-analysis.json'
         AI_OUTPUT_MD      = 'ai-failure-analysis.md'
         AI_OUTPUT_RAW     = 'ai-raw-response.txt'
-        AI_DASHBOARD_URL  = 'http://localhost:4173'
-        CI_LOGS_DIR       = 'ci-logs'
+
+        AI_DASHBOARD_COMPOSE_FILE = 'ai-dashboard/docker-compose.dashboard.yml'
+        AI_DASHBOARD_PROJECT      = 'flight-delay-ai-dashboard'
+        AI_DASHBOARD_SERVICE      = 'flightdelay-ai-dashboard'
+        AI_DASHBOARD_URL          = 'http://127.0.0.1:4173'
+        AI_DASHBOARD_PORT         = '4173'
+
+        CI_LOGS_DIR = 'ci-logs'
 
         REGISTRY_CREDENTIALS   = 'DockerHub'
         KUBECONFIG_CREDENTIALS = 'kind-flight-delay-kubeconfig'
@@ -268,9 +274,23 @@ pipeline {
 
                     python3 -m py_compile "$AI_SCRIPT_HOST"
 
+                    PUBLISH_SCRIPT_HOST="$WORKSPACE_ROOT/$AI_PUBLISH_SCRIPT"
+
+                    if [ ! -f "$PUBLISH_SCRIPT_HOST" ]; then
+                        echo "ERROR: dashboard publisher is missing: $PUBLISH_SCRIPT_HOST"
+                        exit 1
+                    fi
+
+                    python3 -m py_compile "$PUBLISH_SCRIPT_HOST"
+
                     echo '===== Project files ====='
                     test -f "$WORKSPACE_ROOT/Jenkinsfile"
                     test -f "$WORKSPACE_ROOT/$COMPOSE_FILE"
+
+                    test -f "$WORKSPACE_ROOT/$AI_DASHBOARD_COMPOSE_FILE"
+                    test -f "$WORKSPACE_ROOT/ai-dashboard/Dockerfile"
+                    test -f "$WORKSPACE_ROOT/ai-dashboard/package.json"
+                    test -f "$WORKSPACE_ROOT/ai-dashboard/package-lock.json"
 
                     test -f "$WORKSPACE_ROOT/backend/Dockerfile"
                     test -f "$WORKSPACE_ROOT/backend/requirements.txt"
@@ -293,6 +313,95 @@ pipeline {
 
                     echo 'AI script found and Python syntax is valid.'
                     echo 'Agent and project validation succeeded.'
+                '''
+            }
+        }
+
+        stage('Start AI Dashboard') {
+            steps {
+                script { env.LAST_STAGE = 'Start AI Dashboard' }
+
+                sh '''#!/usr/bin/env bash
+                    set -Eeuo pipefail
+
+                    WORKSPACE_ROOT="$(pwd -P)"
+                    DASHBOARD_COMPOSE="$WORKSPACE_ROOT/$AI_DASHBOARD_COMPOSE_FILE"
+
+                    mkdir -p "$CI_LOGS_DIR"
+
+                    export DASHBOARD_PORT="$AI_DASHBOARD_PORT"
+                    export DASHBOARD_INGEST_TOKEN="${AI_DASHBOARD_TOKEN:-}"
+
+                    echo '===== Starting the persistent AI dashboard ====='
+                    echo "Compose file: $DASHBOARD_COMPOSE"
+                    echo "Compose project: $AI_DASHBOARD_PROJECT"
+                    echo "Service: $AI_DASHBOARD_SERVICE"
+                    echo "URL: $AI_DASHBOARD_URL"
+
+                    docker compose \
+                      --project-name "$AI_DASHBOARD_PROJECT" \
+                      --file "$DASHBOARD_COMPOSE" \
+                      up \
+                      --detach \
+                      --build \
+                      "$AI_DASHBOARD_SERVICE" \
+                      2>&1 |
+                      tee "$CI_LOGS_DIR/dashboard-start.log"
+
+                    dashboard_ready=false
+
+                    for attempt in $(seq 1 90); do
+                        if curl \
+                          --fail \
+                          --silent \
+                          --show-error \
+                          --connect-timeout 3 \
+                          --max-time 10 \
+                          "$AI_DASHBOARD_URL/api/health" \
+                          > "$CI_LOGS_DIR/dashboard-health.json" \
+                          2> "$CI_LOGS_DIR/dashboard-health-error.log"
+                        then
+                            dashboard_ready=true
+                            break
+                        fi
+
+                        echo "Waiting for AI dashboard: attempt $attempt/90"
+                        sleep 2
+                    done
+
+                    if [ "$dashboard_ready" != true ]; then
+                        echo 'ERROR: AI dashboard did not become healthy.'
+
+                        docker compose \
+                          --project-name "$AI_DASHBOARD_PROJECT" \
+                          --file "$DASHBOARD_COMPOSE" \
+                          ps --all \
+                          2>&1 |
+                          tee "$CI_LOGS_DIR/dashboard-ps.log" || true
+
+                        docker compose \
+                          --project-name "$AI_DASHBOARD_PROJECT" \
+                          --file "$DASHBOARD_COMPOSE" \
+                          logs \
+                          --no-color \
+                          --timestamps \
+                          "$AI_DASHBOARD_SERVICE" \
+                          2>&1 |
+                          tee "$CI_LOGS_DIR/dashboard-start-failure.log" || true
+
+                        exit 1
+                    fi
+
+                    echo '===== AI dashboard health ====='
+                    cat "$CI_LOGS_DIR/dashboard-health.json"
+                    echo
+
+                    docker compose \
+                      --project-name "$AI_DASHBOARD_PROJECT" \
+                      --file "$DASHBOARD_COMPOSE" \
+                      ps
+
+                    echo 'AI dashboard is ready and will remain running after the pipeline.'
                 '''
             }
         }
@@ -1521,7 +1630,86 @@ PYTHON_PREPARE_EXTERNAL
                                 set +e
                                 set +x
 
-                                python3 "$AI_PUBLISH_SCRIPT" \
+                                WORKSPACE_ROOT="$(pwd -P)"
+                                DASHBOARD_COMPOSE="$WORKSPACE_ROOT/$AI_DASHBOARD_COMPOSE_FILE"
+                                PUBLISH_SCRIPT="$WORKSPACE_ROOT/$AI_PUBLISH_SCRIPT"
+
+                                mkdir -p "$CI_LOGS_DIR"
+
+                                export DASHBOARD_PORT="$AI_DASHBOARD_PORT"
+                                export DASHBOARD_INGEST_TOKEN="${AI_DASHBOARD_TOKEN:-}"
+
+                                dashboard_ready=false
+
+                                if curl \
+                                  --fail \
+                                  --silent \
+                                  --show-error \
+                                  --connect-timeout 3 \
+                                  --max-time 10 \
+                                  "$AI_DASHBOARD_URL/api/health" \
+                                  > "$CI_LOGS_DIR/dashboard-health-before-publish.json" \
+                                  2> "$CI_LOGS_DIR/dashboard-health-before-publish-error.log"
+                                then
+                                    dashboard_ready=true
+                                else
+                                    echo 'Dashboard is unavailable before publication. Restarting it.' |
+                                      tee "$CI_LOGS_DIR/dashboard-restart.log"
+
+                                    docker compose \
+                                      --project-name "$AI_DASHBOARD_PROJECT" \
+                                      --file "$DASHBOARD_COMPOSE" \
+                                      up \
+                                      --detach \
+                                      --build \
+                                      "$AI_DASHBOARD_SERVICE" \
+                                      >> "$CI_LOGS_DIR/dashboard-restart.log" \
+                                      2>&1
+
+                                    for attempt in $(seq 1 90); do
+                                        if curl \
+                                          --fail \
+                                          --silent \
+                                          --show-error \
+                                          --connect-timeout 3 \
+                                          --max-time 10 \
+                                          "$AI_DASHBOARD_URL/api/health" \
+                                          > "$CI_LOGS_DIR/dashboard-health-before-publish.json" \
+                                          2> "$CI_LOGS_DIR/dashboard-health-before-publish-error.log"
+                                        then
+                                            dashboard_ready=true
+                                            break
+                                        fi
+
+                                        sleep 2
+                                    done
+                                fi
+
+                                if [ "$dashboard_ready" != true ]; then
+                                    echo 'Dashboard publication skipped because the dashboard is still unreachable.' |
+                                      tee "$CI_LOGS_DIR/dashboard-publish.log"
+
+                                    docker compose \
+                                      --project-name "$AI_DASHBOARD_PROJECT" \
+                                      --file "$DASHBOARD_COMPOSE" \
+                                      logs \
+                                      --no-color \
+                                      --timestamps \
+                                      "$AI_DASHBOARD_SERVICE" \
+                                      >> "$CI_LOGS_DIR/dashboard-publish.log" \
+                                      2>&1 || true
+
+                                    exit 0
+                                fi
+
+                                if [ ! -f "$PUBLISH_SCRIPT" ]; then
+                                    echo "Dashboard publisher is missing: $PUBLISH_SCRIPT" |
+                                      tee "$CI_LOGS_DIR/dashboard-publish.log"
+                                    exit 0
+                                fi
+
+                                BUILD_RESULT=FAILURE \
+                                python3 "$PUBLISH_SCRIPT" \
                                   --report "$AI_OUTPUT_JSON" \
                                   --dashboard-url "$AI_DASHBOARD_URL" \
                                   --token "${AI_DASHBOARD_TOKEN:-}" \
@@ -1533,6 +1721,8 @@ PYTHON_PREPARE_EXTERNAL
                                 if [ "$PUBLISH_EXIT_CODE" -ne 0 ]; then
                                     echo "Dashboard publication failed with code $PUBLISH_EXIT_CODE."
                                     echo 'The AI report remains available as a Jenkins artifact.'
+                                else
+                                    echo 'AI failure analysis was published to the dashboard.'
                                 fi
 
                                 exit 0
@@ -1591,6 +1781,7 @@ PYTHON_PREPARE_EXTERNAL
                   > /dev/null 2>&1 || true
             '''
 
+            echo 'The dedicated AI dashboard remains running on http://127.0.0.1:4173.'
             cleanWs()
         }
     }
