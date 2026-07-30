@@ -214,12 +214,12 @@ Evidence and consistency requirements:
 
 Keep the response concise so it can run efficiently on CPU-only hardware:
 
-- Return at most 3 secondary errors.
-- Return at most 3 evidence items.
-- Return at most 4 diagnostic checks.
-- Return at most 4 remediation steps.
-- Return at most 4 prevention items.
-- Return at most 4 missing-information items.
+- Return at most 2 secondary errors.
+- Return at most 2 evidence items.
+- Return at most 2 diagnostic checks.
+- Return at most 2 remediation steps.
+- Return at most 2 prevention items.
+- Return at most 2 missing-information items.
 - Avoid repeating the same error, explanation, or command.
 - Keep each explanation direct and brief.
 
@@ -238,7 +238,7 @@ OUTPUT_SCHEMA: dict[str, Any] = {
                 "insufficient_evidence",
             ],
         },
-        "summary": {"type": "string", "maxLength": 600},
+        "summary": {"type": "string", "maxLength": 350},
         "failed_stage": {"type": "string", "maxLength": 160},
         "failed_component": {"type": "string", "maxLength": 160},
         "category": {
@@ -261,21 +261,21 @@ OUTPUT_SCHEMA: dict[str, Any] = {
                 "unknown",
             ],
         },
-        "root_cause": {"type": "string", "maxLength": 900},
+        "root_cause": {"type": "string", "maxLength": 600},
         "secondary_errors": {
             "type": "array",
-            "maxItems": 3,
+            "maxItems": 2,
             "items": {"type": "string"},
         },
         "evidence": {
             "type": "array",
-            "maxItems": 3,
+            "maxItems": 2,
             "items": {
                 "type": "object",
                 "properties": {
                     "log_file": {"type": "string", "maxLength": 260},
-                    "excerpt": {"type": "string", "maxLength": 900},
-                    "interpretation": {"type": "string", "maxLength": 500},
+                    "excerpt": {"type": "string", "maxLength": 600},
+                    "interpretation": {"type": "string", "maxLength": 300},
                 },
                 "required": [
                     "log_file",
@@ -286,7 +286,7 @@ OUTPUT_SCHEMA: dict[str, Any] = {
         },
         "checks": {
             "type": "array",
-            "maxItems": 4,
+            "maxItems": 2,
             "items": {
                 "type": "object",
                 "properties": {
@@ -300,9 +300,9 @@ OUTPUT_SCHEMA: dict[str, Any] = {
                             "Kubernetes",
                         ],
                     },
-                    "command": {"type": "string", "maxLength": 600},
-                    "purpose": {"type": "string", "maxLength": 350},
-                    "expected_result": {"type": "string", "maxLength": 350},
+                    "command": {"type": "string", "maxLength": 400},
+                    "purpose": {"type": "string", "maxLength": 250},
+                    "expected_result": {"type": "string", "maxLength": 250},
                 },
                 "required": [
                     "platform",
@@ -314,7 +314,7 @@ OUTPUT_SCHEMA: dict[str, Any] = {
         },
         "remediation_steps": {
             "type": "array",
-            "maxItems": 4,
+            "maxItems": 2,
             "items": {
                 "type": "object",
                 "properties": {
@@ -322,7 +322,7 @@ OUTPUT_SCHEMA: dict[str, Any] = {
                         "type": "string",
                         "enum": ["high", "medium", "low"],
                     },
-                    "action": {"type": "string", "maxLength": 450},
+                    "action": {"type": "string", "maxLength": 300},
                     "command": {"type": "string"},
                     "risk": {
                         "type": "string",
@@ -343,12 +343,12 @@ OUTPUT_SCHEMA: dict[str, Any] = {
         },
         "prevention": {
             "type": "array",
-            "maxItems": 4,
+            "maxItems": 2,
             "items": {"type": "string"},
         },
         "missing_information": {
             "type": "array",
-            "maxItems": 4,
+            "maxItems": 2,
             "items": {"type": "string"},
         },
         "confidence": {
@@ -668,8 +668,8 @@ def request_analysis(
         "format": OUTPUT_SCHEMA,
         "options": {
             "temperature": 0,
-            "num_ctx": 4096,
-            "num_predict": 1200,
+            "num_ctx": 6144,
+            "num_predict": 2000,
         },
         "messages": [
             {
@@ -745,13 +745,51 @@ def request_analysis(
     try:
         return json.loads(content)
     except json.JSONDecodeError as error:
-        raise RuntimeError(
-            "Ollama returned invalid JSON. "
-            f"done_reason={done_reason}, "
-            f"eval_count={eval_count}, "
-            f"JSON error={error}. "
-            f"Raw response saved to {raw_output_path}."
-        ) from error
+        print(
+            "WARNING: Ollama returned invalid or truncated JSON. "
+            "The grounded local fallback will analyze the collected "
+            "pipeline errors instead.",
+            file=sys.stderr,
+            flush=True,
+        )
+        print(
+            f"Ollama JSON details: done_reason={done_reason}, "
+            f"eval_count={eval_count}, error={error}",
+            file=sys.stderr,
+            flush=True,
+        )
+        print(
+            f"Raw Ollama response saved to {raw_output_path}.",
+            file=sys.stderr,
+            flush=True,
+        )
+
+        return {
+            "analysis_status": "insufficient_evidence",
+            "summary": (
+                "The Ollama response could not be parsed as complete "
+                "JSON. A grounded local fallback will use the collected "
+                "pipeline logs."
+            ),
+            "failed_stage": os.getenv(
+                "LAST_STAGE",
+                "unknown",
+            ),
+            "failed_component": "pipeline",
+            "category": "unknown",
+            "root_cause": (
+                "The model response was truncated or malformed."
+            ),
+            "secondary_errors": [],
+            "evidence": [],
+            "checks": [],
+            "remediation_steps": [],
+            "prevention": [],
+            "missing_information": [
+                "The Ollama JSON response was incomplete."
+            ],
+            "confidence": 0.0,
+        }
 
 
 def normalize_confidence(value: Any) -> float:
