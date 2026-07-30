@@ -1,0 +1,52 @@
+services:
+  flightdelay-ai-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DASHBOARD_INGEST_TOKEN: ${DASHBOARD_INGEST_TOKEN:-}
+    ports:
+      - "${DASHBOARD_PORT:-4173}:4173"
+    volumes:
+      - flightdelay-ai-dashboard-data:/app/.wrangler/state
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --quiet
+        - --tries=1
+        - --spider
+        - http://127.0.0.1:4173/api/health
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  flightdelay-ai-collector:
+    profiles:
+      - collector
+    build:
+      context: .
+      dockerfile: integrations/Dockerfile.collector
+    restart: unless-stopped
+    environment:
+      JENKINS_BASE_URL: ${JENKINS_BASE_URL:-http://host.docker.internal:8080}
+      JENKINS_JOB_PATH: ${JENKINS_JOB_PATH:-job/FlightDelay/job/main}
+      JENKINS_USER: ${JENKINS_USER:-}
+      JENKINS_API_TOKEN: ${JENKINS_API_TOKEN:-}
+      DASHBOARD_URL: ${DASHBOARD_URL:-http://host.docker.internal:4173}
+      DASHBOARD_INGEST_TOKEN: ${DASHBOARD_INGEST_TOKEN:-}
+      SITES_ACCESS_TOKEN: ${SITES_ACCESS_TOKEN:-}
+      POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS:-60}
+      LOOKBACK_BUILDS: ${LOOKBACK_BUILDS:-25}
+      AI_ANALYSIS_ARTIFACT: ${AI_ANALYSIS_ARTIFACT:-ai-failure-analysis.json}
+      COLLECTOR_STATE_FILE: /data/collector-state.json
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - flightdelay-ai-collector-data:/data
+
+volumes:
+  flightdelay-ai-dashboard-data:
+  flightdelay-ai-collector-data:
