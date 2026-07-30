@@ -1,11 +1,16 @@
+name: flight-delay-ai-dashboard
+
 services:
   flightdelay-ai-dashboard:
     build:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    init: true
     environment:
       DASHBOARD_INGEST_TOKEN: ${DASHBOARD_INGEST_TOKEN:-}
+      HOST: "0.0.0.0"
+      PORT: "4173"
     ports:
       - "${DASHBOARD_PORT:-4173}:4173"
     volumes:
@@ -13,15 +18,20 @@ services:
     healthcheck:
       test:
         - CMD
-        - wget
-        - --quiet
-        - --tries=1
-        - --spider
-        - http://127.0.0.1:4173/api/health
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:4173/api/health')
+          .then(response => {
+            if (!response.ok) process.exit(1);
+          })
+          .catch(() => process.exit(1))
       interval: 10s
       timeout: 5s
       retries: 12
-      start_period: 30s
+      start_period: 60s
+    networks:
+      - dashboard-network
 
   flightdelay-ai-collector:
     profiles:
@@ -30,12 +40,16 @@ services:
       context: .
       dockerfile: integrations/Dockerfile.collector
     restart: unless-stopped
+    init: true
+    depends_on:
+      flightdelay-ai-dashboard:
+        condition: service_healthy
     environment:
       JENKINS_BASE_URL: ${JENKINS_BASE_URL:-http://host.docker.internal:8080}
       JENKINS_JOB_PATH: ${JENKINS_JOB_PATH:-job/FlightDelay/job/main}
       JENKINS_USER: ${JENKINS_USER:-}
       JENKINS_API_TOKEN: ${JENKINS_API_TOKEN:-}
-      DASHBOARD_URL: ${DASHBOARD_URL:-http://host.docker.internal:4173}
+      DASHBOARD_URL: ${DASHBOARD_URL:-http://flightdelay-ai-dashboard:4173}
       DASHBOARD_INGEST_TOKEN: ${DASHBOARD_INGEST_TOKEN:-}
       SITES_ACCESS_TOKEN: ${SITES_ACCESS_TOKEN:-}
       POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS:-60}
@@ -46,7 +60,13 @@ services:
       - host.docker.internal:host-gateway
     volumes:
       - flightdelay-ai-collector-data:/data
+    networks:
+      - dashboard-network
 
 volumes:
   flightdelay-ai-dashboard-data:
   flightdelay-ai-collector-data:
+
+networks:
+  dashboard-network:
+    driver: bridge
