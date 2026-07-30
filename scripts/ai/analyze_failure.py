@@ -133,6 +133,35 @@ Common environment-specific failures to recognize include:
 - Kubernetes probes use the wrong port or path.
 - Disk space, memory, or Docker build cache is exhausted.
 
+Analyze failures from every pipeline area, including:
+
+- checkout and source control
+- Jenkins agent and WSL
+- Docker and Docker Compose
+- frontend, backend, analytics, Redis, SQLite, and Ollama
+- tests and health checks
+- Docker Hub authentication and image publication
+- Helm rendering and Kubernetes deployment
+- network, credentials, configuration, timeout, disk, RAM, and CPU issues
+
+Evidence and consistency requirements:
+
+- Use the metadata field last_stage as the failed stage unless stronger log
+  evidence proves another stage failed first.
+- Every evidence excerpt must appear verbatim in the supplied logs.
+- Never invent a log filename, error message, command result, or service state.
+- The root cause must be supported by at least one evidence excerpt.
+- Do not use evidence describing an unrelated or older failure.
+- Confidence must be a number from 0 to 1, for example 0.75, never 75.
+- When analysis_status is insufficient_evidence, confidence must be below 0.5.
+- If force_ai_failure is true and the logs contain
+  "Controlled failure triggered to validate Ollama analysis.", classify it as
+  test_failure and explain that Jenkins intentionally exited with code 1.
+- Do not report the simulated Redis or backend message as a real outage when
+  force_ai_failure is true.
+- Distinguish the original pipeline failure from errors produced later by the
+  AI-analysis or cleanup process.
+
 Keep the response concise so it can run efficiently on CPU-only hardware:
 
 - Return at most 3 secondary errors.
@@ -159,9 +188,9 @@ OUTPUT_SCHEMA: dict[str, Any] = {
                 "insufficient_evidence",
             ],
         },
-        "summary": {"type": "string"},
-        "failed_stage": {"type": "string"},
-        "failed_component": {"type": "string"},
+        "summary": {"type": "string", "maxLength": 600},
+        "failed_stage": {"type": "string", "maxLength": 160},
+        "failed_component": {"type": "string", "maxLength": 160},
         "category": {
             "type": "string",
             "enum": [
@@ -182,7 +211,7 @@ OUTPUT_SCHEMA: dict[str, Any] = {
                 "unknown",
             ],
         },
-        "root_cause": {"type": "string"},
+        "root_cause": {"type": "string", "maxLength": 900},
         "secondary_errors": {
             "type": "array",
             "maxItems": 3,
@@ -194,9 +223,9 @@ OUTPUT_SCHEMA: dict[str, Any] = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "log_file": {"type": "string"},
-                    "excerpt": {"type": "string"},
-                    "interpretation": {"type": "string"},
+                    "log_file": {"type": "string", "maxLength": 260},
+                    "excerpt": {"type": "string", "maxLength": 900},
+                    "interpretation": {"type": "string", "maxLength": 500},
                 },
                 "required": [
                     "log_file",
@@ -221,9 +250,9 @@ OUTPUT_SCHEMA: dict[str, Any] = {
                             "Kubernetes",
                         ],
                     },
-                    "command": {"type": "string"},
-                    "purpose": {"type": "string"},
-                    "expected_result": {"type": "string"},
+                    "command": {"type": "string", "maxLength": 600},
+                    "purpose": {"type": "string", "maxLength": 350},
+                    "expected_result": {"type": "string", "maxLength": 350},
                 },
                 "required": [
                     "platform",
@@ -243,7 +272,7 @@ OUTPUT_SCHEMA: dict[str, Any] = {
                         "type": "string",
                         "enum": ["high", "medium", "low"],
                     },
-                    "action": {"type": "string"},
+                    "action": {"type": "string", "maxLength": 450},
                     "command": {"type": "string"},
                     "risk": {
                         "type": "string",
@@ -410,7 +439,15 @@ def collect_logs(logs_directory: Path) -> str:
 
     sections: list[str] = []
 
-    for log_file in sorted(logs_directory.rglob("*.log")):
+    log_files = sorted(
+        logs_directory.rglob("*.log"),
+        key=lambda path: (
+            path.stat().st_mtime,
+            str(path),
+        ),
+    )
+
+    for log_file in log_files:
         raw_text = log_file.read_text(
             encoding="utf-8",
             errors="replace",
@@ -421,8 +458,10 @@ def collect_logs(logs_directory: Path) -> str:
         if not relevant:
             continue
 
+        relative_name = log_file.relative_to(logs_directory)
+
         section = (
-            f"\n===== LOG FILE: {log_file} =====\n"
+            f"\n===== LOG FILE: {relative_name} =====\n"
             + "\n".join(relevant)
         )
 
@@ -448,6 +487,12 @@ def build_user_prompt(log_text: str) -> str:
         "commit": os.getenv("SHORT_SHA", "unknown"),
         "node_name": os.getenv("NODE_NAME", "unknown"),
         "workspace": os.getenv("WORKSPACE", "unknown"),
+        "last_stage": os.getenv("LAST_STAGE", "unknown"),
+        "build_result": os.getenv("BUILD_RESULT", "FAILURE"),
+        "force_ai_failure": os.getenv(
+            "FORCE_AI_FAILURE",
+            "false",
+        ).lower(),
     }
 
     return f"""
@@ -459,13 +504,17 @@ Pipeline metadata:
 
 Instructions:
 
-- Find the earliest meaningful root cause.
-- Do not treat repeated retries as separate root causes.
-- Use exact log excerpts as evidence.
+- Find the earliest meaningful root cause of the current build failure.
+- Use last_stage to identify where Jenkins was executing when it failed.
+- Do not treat repeated retries or cleanup errors as separate root causes.
+- Use only exact log excerpts as evidence.
+- Never invent evidence or a log filename.
+- Make sure the root cause and evidence describe the same failure.
 - Provide commands that match this Windows + WSL environment.
 - Do not output secrets.
+- Return confidence as a number between 0 and 1.
 - If the root cause cannot be proved, use
-  analysis_status="insufficient_evidence".
+  analysis_status="insufficient_evidence" and confidence below 0.5.
 
 Sanitized and reduced pipeline logs:
 
@@ -572,7 +621,161 @@ def request_analysis(
         ) from error
 
 
+def normalize_confidence(value: Any) -> float:
+    try:
+        if isinstance(value, str):
+            normalized = value.strip().rstrip("%")
+            confidence = float(normalized)
+        else:
+            confidence = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+    if 1 < confidence <= 100:
+        confidence /= 100
+
+    return max(0.0, min(confidence, 1.0))
+
+
+def excerpt_is_grounded(excerpt: str, log_text: str) -> bool:
+    meaningful_lines = [
+        line.strip()
+        for line in excerpt.splitlines()
+        if len(line.strip()) >= 8
+    ]
+
+    if not meaningful_lines:
+        return False
+
+    return any(
+        line in log_text
+        for line in meaningful_lines
+    )
+
+
+def normalize_result(
+    result: dict[str, Any],
+    log_text: str,
+) -> dict[str, Any]:
+    required_fields = set(OUTPUT_SCHEMA["required"])
+    missing_fields = required_fields - result.keys()
+
+    if missing_fields:
+        raise RuntimeError(
+            "Ollama returned an incomplete analysis. "
+            f"Missing fields: {sorted(missing_fields)}"
+        )
+
+    result["confidence"] = normalize_confidence(
+        result.get("confidence", 0)
+    )
+
+    grounded_evidence: list[dict[str, str]] = []
+
+    for evidence in result.get("evidence", []):
+        if not isinstance(evidence, dict):
+            continue
+
+        excerpt = str(evidence.get("excerpt", "")).strip()
+
+        if excerpt_is_grounded(excerpt, log_text):
+            grounded_evidence.append(
+                {
+                    "log_file": str(
+                        evidence.get("log_file", "unknown")
+                    ),
+                    "excerpt": excerpt,
+                    "interpretation": str(
+                        evidence.get(
+                            "interpretation",
+                            "No interpretation provided.",
+                        )
+                    ),
+                }
+            )
+
+    result["evidence"] = grounded_evidence[:3]
+
+    force_ai_failure = (
+        os.getenv("FORCE_AI_FAILURE", "false").lower()
+        == "true"
+    )
+    controlled_marker = (
+        "Controlled failure triggered to validate "
+        "Ollama analysis."
+    )
+
+    if force_ai_failure and controlled_marker in log_text:
+        result.update(
+            {
+                "analysis_status": "diagnosed",
+                "failed_stage": "Test AI Failure Analysis",
+                "failed_component": (
+                    "AI failure-analysis controlled test"
+                ),
+                "category": "test_failure",
+                "root_cause": (
+                    "Jenkins intentionally exited with code 1 "
+                    "because FORCE_AI_FAILURE was enabled."
+                ),
+                "confidence": 1.0,
+                "secondary_errors": [],
+                "evidence": [
+                    {
+                        "log_file": "simulated-failure.log",
+                        "excerpt": controlled_marker,
+                        "interpretation": (
+                            "This line confirms that the failure "
+                            "was intentionally generated to test "
+                            "the Ollama analysis."
+                        ),
+                    }
+                ],
+            }
+        )
+
+    if not result["evidence"]:
+        result["analysis_status"] = "insufficient_evidence"
+        result["confidence"] = min(
+            result["confidence"],
+            0.49,
+        )
+
+        missing_information = list(
+            result.get("missing_information", [])
+        )
+
+        message = (
+            "No model evidence excerpt could be verified "
+            "against the supplied logs."
+        )
+
+        if message not in missing_information:
+            missing_information.append(message)
+
+        result["missing_information"] = (
+            missing_information[:4]
+        )
+
+    if result["analysis_status"] == "insufficient_evidence":
+        result["confidence"] = min(
+            result["confidence"],
+            0.49,
+        )
+
+    return result
+
+
 def render_markdown(result: dict[str, Any]) -> str:
+    status = result["analysis_status"]
+
+    if status == "diagnosed":
+        root_cause_heading = "## Root cause"
+    elif status == "probable":
+        root_cause_heading = "## Probable root cause"
+    else:
+        root_cause_heading = "## Unconfirmed hypothesis"
+
     lines = [
         "# AI Pipeline Failure Analysis",
         "",
@@ -586,7 +789,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         "",
         result["summary"],
         "",
-        "## Probable root cause",
+        root_cause_heading,
         "",
         result["root_cause"],
         "",
@@ -676,6 +879,11 @@ def main() -> int:
             model=model,
             user_prompt=build_user_prompt(logs),
             raw_output_path=raw_output_path,
+        )
+
+        result = normalize_result(
+            result=result,
+            log_text=logs,
         )
 
         Path(args.output_json).write_text(
