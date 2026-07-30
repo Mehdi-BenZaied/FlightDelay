@@ -86,11 +86,13 @@ pipeline {
         K8S_ANALYTICS_URL = 'http://localhost:8051'
 
         DOCKER_BUILDKIT = '1'
+        LAST_STAGE = 'Pipeline initialization'
     }
 
     stages {
         stage('Checkout and Metadata') {
             steps {
+                script { env.LAST_STAGE = 'Checkout and Metadata' }
                 checkout scm
 
                 script {
@@ -151,6 +153,7 @@ pipeline {
 
         stage('Validate Parameters') {
             steps {
+                script { env.LAST_STAGE = 'Validate Parameters' }
                 script {
                     if (!params.OLLAMA_MODEL?.trim()) {
                         error('OLLAMA_MODEL cannot be empty.')
@@ -205,6 +208,7 @@ pipeline {
 
         stage('Validate Agent and Project') {
             steps {
+                script { env.LAST_STAGE = 'Validate Agent and Project' }
                 sh '''#!/usr/bin/env bash
                     set -Eeuo pipefail
 
@@ -286,6 +290,7 @@ pipeline {
 
         stage('Validate Docker Compose') {
             steps {
+                script { env.LAST_STAGE = 'Validate Docker Compose' }
                 sh '''#!/usr/bin/env bash
                     set -Eeuo pipefail
 
@@ -310,6 +315,7 @@ pipeline {
 
         stage('Validate Helm Chart') {
             steps {
+                script { env.LAST_STAGE = 'Validate Helm Chart' }
                 sh '''
                     set -eu
 
@@ -343,6 +349,7 @@ pipeline {
             parallel {
                 stage('Build Frontend') {
                     steps {
+                        script { env.LAST_STAGE = 'Build Frontend' }
                         sh '''#!/usr/bin/env bash
                             set -Eeuo pipefail
 
@@ -362,6 +369,7 @@ pipeline {
 
                 stage('Build Backend') {
                     steps {
+                        script { env.LAST_STAGE = 'Build Backend' }
                         sh '''#!/usr/bin/env bash
                             set -Eeuo pipefail
 
@@ -383,6 +391,7 @@ pipeline {
 
         stage('Inspect Docker Images') {
             steps {
+                script { env.LAST_STAGE = 'Inspect Docker Images' }
                 sh '''
                     set -eu
 
@@ -399,6 +408,7 @@ pipeline {
 
         stage('Docker Compose Integration Tests') {
             steps {
+                script { env.LAST_STAGE = 'Docker Compose Integration Tests' }
                 sh '''#!/usr/bin/env bash
                     set -Eeuo pipefail
                     set +x
@@ -628,6 +638,7 @@ PYTHON_OLLAMA_CHECK
             }
 
             steps {
+                script { env.LAST_STAGE = 'Test AI Failure Analysis' }
                 sh '''#!/usr/bin/env bash
                     set -Eeuo pipefail
 
@@ -641,7 +652,9 @@ PYTHON_OLLAMA_CHECK
                         echo 'Docker Compose Integration Tests failed with exit code 1'
                     } | tee "$CI_LOGS_DIR/simulated-failure.log"
 
-                    echo 'Controlled failure triggered to validate Ollama analysis.'
+                    echo 'Controlled failure triggered to validate Ollama analysis.' |
+                      tee -a "$CI_LOGS_DIR/simulated-failure.log"
+
                     exit 1
                 '''
             }
@@ -659,6 +672,7 @@ PYTHON_OLLAMA_CHECK
             }
 
             steps {
+                script { env.LAST_STAGE = 'Publish Docker Images' }
                 withCredentials([
                     usernamePassword(
                         credentialsId: env.REGISTRY_CREDENTIALS,
@@ -718,6 +732,7 @@ PYTHON_OLLAMA_CHECK
             }
 
             steps {
+                script { env.LAST_STAGE = 'Check Kubernetes Access' }
                 withCredentials([
                     file(
                         credentialsId: env.KUBECONFIG_CREDENTIALS,
@@ -757,6 +772,7 @@ PYTHON_OLLAMA_CHECK
             }
 
             steps {
+                script { env.LAST_STAGE = 'Prepare Namespace and Registry Secret' }
                 withCredentials([
                     file(
                         credentialsId: env.KUBECONFIG_CREDENTIALS,
@@ -810,6 +826,7 @@ PYTHON_OLLAMA_CHECK
             }
 
             steps {
+                script { env.LAST_STAGE = 'Deploy with Helm' }
                 withCredentials([
                     file(
                         credentialsId: env.KUBECONFIG_CREDENTIALS,
@@ -909,6 +926,7 @@ PYTHON_OLLAMA_CHECK
             }
 
             steps {
+                script { env.LAST_STAGE = 'Verify Kubernetes Deployment' }
                 withCredentials([
                     file(
                         credentialsId: env.KUBECONFIG_CREDENTIALS,
@@ -972,6 +990,7 @@ PYTHON_OLLAMA_CHECK
             }
 
             steps {
+                script { env.LAST_STAGE = 'Kubernetes Smoke Tests' }
                 sh '''
                     set -eu
 
@@ -1017,6 +1036,7 @@ PYTHON_OLLAMA_CHECK
             }
 
             steps {
+                script { env.LAST_STAGE = 'Show Deployment' }
                 echo "Helm release: ${env.HELM_RELEASE}"
                 echo "Namespace: ${env.K8S_NAMESPACE}"
                 echo "Kube context: ${env.KUBE_CONTEXT}"
@@ -1062,7 +1082,36 @@ PYTHON_OLLAMA_CHECK
                             echo "Resolved workspace: $WORKSPACE_ROOT"
                             echo "AI script: $AI_SCRIPT_HOST"
                             echo "Ollama model: $MODEL"
+                            echo "Last entered stage: ${LAST_STAGE:-unknown}"
+                            echo "Build result: FAILURE"
+                            echo "Force AI failure: ${FORCE_AI_FAILURE:-false}"
                         } > "$LOGS_PATH/pipeline-context.log"
+
+                        if [ -n "${BUILD_URL:-}" ]; then
+                            CONSOLE_TMP="$LOGS_PATH/jenkins-console.log.tmp"
+
+                            if curl \
+                              --fail \
+                              --silent \
+                              --show-error \
+                              --max-time 30 \
+                              "${BUILD_URL}consoleText" \
+                              --output "$CONSOLE_TMP" \
+                              2> /dev/null
+                            then
+                                mv \
+                                  "$CONSOLE_TMP" \
+                                  "$LOGS_PATH/jenkins-console.log"
+
+                                echo 'Jenkins console log collected.' \
+                                  >> "$LOGS_PATH/pipeline-context.log"
+                            else
+                                rm -f "$CONSOLE_TMP"
+
+                                echo 'Jenkins console log could not be downloaded; using stage-specific logs.' \
+                                  >> "$LOGS_PATH/pipeline-context.log"
+                            fi
+                        fi
 
                         if [ ! -f "$AI_SCRIPT_HOST" ]; then
                             {
@@ -1284,6 +1333,9 @@ PYTHON_AI_PREFLIGHT
                           --env "OLLAMA_URL=http://${AI_OLLAMA_CONTAINER}:11434/api/chat" \
                           --env "OLLAMA_MODEL=$MODEL" \
                           --env "OLLAMA_REQUEST_TIMEOUT_SECONDS=$OLLAMA_REQUEST_TIMEOUT_SECONDS" \
+                          --env "LAST_STAGE=${LAST_STAGE:-unknown}" \
+                          --env BUILD_RESULT=FAILURE \
+                          --env "FORCE_AI_FAILURE=${FORCE_AI_FAILURE:-false}" \
                           --env "JOB_NAME=${JOB_NAME:-unknown}" \
                           --env "BUILD_NUMBER=${BUILD_NUMBER:-unknown}" \
                           --env "BUILD_URL=${BUILD_URL:-unknown}" \
