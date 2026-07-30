@@ -3,15 +3,12 @@ name: flight-delay-ai
 services:
   redis:
     image: redis:7-alpine
-
     command:
       - redis-server
       - --appendonly
       - "yes"
-
     volumes:
       - redis_data:/data
-
     healthcheck:
       test:
         - CMD
@@ -21,25 +18,19 @@ services:
       timeout: 5s
       retries: 12
       start_period: 5s
-
     restart: unless-stopped
-
     networks:
       - flight-delay-network
 
   ollama:
     image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
-
     environment:
       OLLAMA_HOST: "0.0.0.0:11434"
       OLLAMA_KEEP_ALIVE: "10m"
-
     expose:
       - "11434"
-
     volumes:
       - ollama_models:/root/.ollama
-
     healthcheck:
       test:
         - CMD-SHELL
@@ -52,23 +43,18 @@ services:
       timeout: 10s
       retries: 30
       start_period: 20s
-
     restart: unless-stopped
-
     networks:
       - flight-delay-network
 
   ollama-init:
     image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
-
     environment:
       OLLAMA_HOST: "http://ollama:11434"
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:3b-instruct}
-
     entrypoint:
       - /bin/sh
       - -c
-
     command:
       - |
         set -eu
@@ -76,58 +62,43 @@ services:
         ollama pull "$${OLLAMA_MODEL}"
         ollama show "$${OLLAMA_MODEL}" > /dev/null
         echo "Ollama model is ready: $${OLLAMA_MODEL}"
-
     depends_on:
       ollama:
         condition: service_healthy
-
     restart: "no"
-
     networks:
       - flight-delay-network
 
   backend:
     image: ${BACKEND_REF:-flight-delay-backend:local}
-
     build:
       context: .
       dockerfile: backend/Dockerfile
       target: runtime
-
     environment:
       PORT: "5000"
       FLASK_DEBUG: "false"
-
       API_V1_STR: "/api/v1"
-
       SECRET_KEY: ${SECRET_KEY:-development-secret-change-me}
       WEATHER_API_KEY: ${WEATHER_API_KEY:-}
-
       MODEL_PATH: "/app/ml/models/v1_model.json"
       FLIGHT_DATA_PATH: "/app/datasets/flight_data.csv"
-
       REDIS_HOST: "redis"
       REDIS_PORT: "6379"
       REDIS_DB: "0"
-
       DATABASE_URL: "sqlite:////app/data/flight_delay.db"
       SQLALCHEMY_DATABASE_URI: "sqlite:////app/data/flight_delay.db"
-
       OLLAMA_BASE_URL: "http://ollama:11434"
       OLLAMA_HOST: "http://ollama:11434"
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:3b-instruct}
       DEFAULT_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:3b-instruct}
-
     command:
       - python
       - run.py
-
     ports:
       - "${BACKEND_HOST_PORT:-5000}:5000"
-
     volumes:
       - backend_data:/app/data
-
     depends_on:
       redis:
         condition: service_healthy
@@ -135,64 +106,50 @@ services:
         condition: service_healthy
       ollama-init:
         condition: service_completed_successfully
-
     healthcheck:
       test:
         - CMD-SHELL
         - >-
           curl --fail --silent --show-error
-          http://127.0.0.1:5000/invalid_health
+          http://127.0.0.1:5000/health
           > /dev/null
           || exit 1
       interval: 10s
       timeout: 10s
       retries: 12
       start_period: 60s
-
     restart: unless-stopped
-
     networks:
       - flight-delay-network
 
   analytics:
     image: ${BACKEND_REF:-flight-delay-backend:local}
-
     build:
       context: .
       dockerfile: backend/Dockerfile
       target: runtime
-
     environment:
       FLASK_DEBUG: "false"
-
       SECRET_KEY: ${SECRET_KEY:-development-secret-change-me}
       WEATHER_API_KEY: ${WEATHER_API_KEY:-}
-
       MODEL_PATH: "/app/ml/models/v1_model.json"
       FLIGHT_DATA_PATH: "/app/datasets/flight_data.csv"
-
       REDIS_HOST: "redis"
       REDIS_PORT: "6379"
       REDIS_DB: "0"
-
       DATABASE_URL: "sqlite:////app/data/flight_delay.db"
       SQLALCHEMY_DATABASE_URI: "sqlite:////app/data/flight_delay.db"
-
       OLLAMA_BASE_URL: "http://ollama:11434"
       OLLAMA_HOST: "http://ollama:11434"
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:3b-instruct}
       DEFAULT_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:3b-instruct}
-
     command:
       - python
       - analytics.py
-
     ports:
       - "${ANALYTICS_HOST_PORT:-8050}:8050"
-
     volumes:
       - backend_data:/app/data
-
     depends_on:
       redis:
         condition: service_healthy
@@ -200,7 +157,6 @@ services:
         condition: service_completed_successfully
       backend:
         condition: service_healthy
-
     healthcheck:
       test:
         - CMD-SHELL
@@ -213,27 +169,21 @@ services:
       timeout: 10s
       retries: 12
       start_period: 60s
-
     restart: unless-stopped
-
     networks:
       - flight-delay-network
 
   frontend:
     image: ${FRONTEND_REF:-flight-delay-frontend:local}
-
     build:
       context: ./frontend
       dockerfile: Dockerfile
       target: runtime
-
     ports:
       - "${FRONTEND_HOST_PORT:-5173}:80"
-
     depends_on:
       backend:
         condition: service_healthy
-
     healthcheck:
       test:
         - CMD-SHELL
@@ -248,44 +198,38 @@ services:
       timeout: 5s
       retries: 12
       start_period: 15s
-
     restart: unless-stopped
-
     networks:
       - flight-delay-network
 
   ai-dashboard:
-    profiles:
-      - dashboard
-
     build:
       context: ./ai-dashboard
       dockerfile: Dockerfile
-
     environment:
       DASHBOARD_INGEST_TOKEN: ${DASHBOARD_INGEST_TOKEN:-}
-
+      HOST: "0.0.0.0"
+      PORT: "4173"
     ports:
       - "${DASHBOARD_PORT:-4173}:4173"
-
     volumes:
       - ai_dashboard_data:/app/.wrangler/state
-
     healthcheck:
       test:
         - CMD
-        - wget
-        - --quiet
-        - --tries=1
-        - --spider
-        - http://127.0.0.1:4173/api/health
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:4173/api/health')
+          .then(response => {
+            if (!response.ok) process.exit(1);
+          })
+          .catch(() => process.exit(1))
       interval: 10s
       timeout: 5s
       retries: 18
       start_period: 60s
-
     restart: unless-stopped
-
     networks:
       - flight-delay-network
 
