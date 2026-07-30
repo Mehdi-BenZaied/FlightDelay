@@ -67,6 +67,7 @@ pipeline {
         AI_SCRIPT         = 'scripts/ai/analyze_failure.py'
         AI_OUTPUT_JSON    = 'ai-failure-analysis.json'
         AI_OUTPUT_MD      = 'ai-failure-analysis.md'
+        AI_OUTPUT_RAW     = 'ai-raw-response.txt'
         CI_LOGS_DIR       = 'ci-logs'
 
         REGISTRY_CREDENTIALS   = 'DockerHub'
@@ -1296,6 +1297,7 @@ PYTHON_AI_PREFLIGHT
                             --logs-dir /workspace/ci-logs \
                             --output-json /workspace/ai-failure-analysis.json \
                             --output-markdown /workspace/ai-failure-analysis.md \
+                            --output-raw /workspace/ai-raw-response.txt \
                           2>&1 |
                           tee "$LOGS_PATH/ai-analysis-run.log"
 
@@ -1335,7 +1337,7 @@ PYTHON_AI_PREFLIGHT
             }
 
             archiveArtifacts(
-                artifacts: 'ci-logs/**/*.log, ai-failure-analysis.json, ai-failure-analysis.md',
+                artifacts: 'ci-logs/**/*.log, ai-failure-analysis.json, ai-failure-analysis.md, ai-raw-response.txt',
                 allowEmptyArchive: true,
                 fingerprint: true
             )
