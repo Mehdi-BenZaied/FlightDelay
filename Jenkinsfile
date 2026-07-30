@@ -30,13 +30,13 @@ pipeline {
 
         string(
             name: 'OLLAMA_MODEL',
-            defaultValue: 'qwen2.5-coder:7b-instruct',
+            defaultValue: 'qwen2.5-coder:3b-instruct',
             description: 'Ollama model used by the backend and integration tests'
         )
 
         string(
             name: 'OLLAMA_REQUEST_TIMEOUT_SECONDS',
-            defaultValue: '2400',
+            defaultValue: '2500',
             description: 'Maximum time to wait for the Ollama analysis response'
         )
     }
@@ -60,7 +60,7 @@ pipeline {
 
         OLLAMA_IMAGE         = 'ollama/ollama:latest'
         OLLAMA_BASE_URL      = 'http://ollama:11434'
-        OLLAMA_MODEL         = 'qwen2.5-coder:7b-instruct'
+        OLLAMA_MODEL         = 'qwen2.5-coder:3b-instruct'
         OLLAMA_MODELS_VOLUME = 'flight-delay-ollama-models'
 
         AI_FALLBACK_ANALYZER_IMAGE = 'python:3.12-alpine'
@@ -1041,7 +1041,7 @@ PYTHON_OLLAMA_CHECK
                         set +x
 
                         WORKSPACE_ROOT="$(pwd -P)"
-                        MODEL="${OLLAMA_MODEL:-qwen2.5-coder:7b-instruct}"
+                        MODEL="${OLLAMA_MODEL:-qwen2.5-coder:3b-instruct}"
                         PROJECT="${CI_PROJECT:-flight-delay-ci-${BUILD_NUMBER}}"
                         AI_NETWORK="${PROJECT}-ai-network"
                         AI_OLLAMA_CONTAINER="${PROJECT}-ai-ollama"
@@ -1221,7 +1221,7 @@ payload = {
     "keep_alive": "30m",
     "options": {
         "temperature": 0,
-        "num_ctx": 8192,
+        "num_ctx": 4096,
         "num_predict": 4,
     },
     "messages": [
