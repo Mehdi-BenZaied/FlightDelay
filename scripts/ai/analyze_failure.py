@@ -22,6 +22,31 @@ OLLAMA_REQUEST_TIMEOUT_SECONDS = int(
     os.getenv("OLLAMA_REQUEST_TIMEOUT_SECONDS", "2500")
 )
 
+PER_LOG_CHARACTER_LIMIT = 4_000
+
+IGNORED_ANALYSIS_LOGS = {
+    "ai-analysis-run.log",
+    "ai-analysis-error.log",
+    "ai-analysis-success.log",
+    "ai-model-preflight.log",
+    "ollama-model-pull.log",
+    "ollama-external-check.log",
+}
+
+LOG_PRIORITY = {
+    "pipeline-context.log": 0,
+    "jenkins-console.log": 1,
+    "simulated-failure.log": 2,
+    "docker-daemon-check.log": 2,
+    "docker-compose-failure.log": 3,
+    "final-compose-state.log": 3,
+    "docker-compose-integration.log": 4,
+    "build-backend.log": 5,
+    "build-frontend.log": 5,
+    "validate-compose.log": 6,
+    "kubernetes-failure.log": 7,
+}
+
 ERROR_PATTERN = re.compile(
     r"""
     error
@@ -437,15 +462,22 @@ def collect_logs(logs_directory: Path) -> str:
             f"Log directory does not exist: {logs_directory}"
         )
 
-    sections: list[str] = []
+    log_files = [
+        path
+        for path in logs_directory.rglob("*.log")
+        if path.name not in IGNORED_ANALYSIS_LOGS
+    ]
 
-    log_files = sorted(
-        logs_directory.rglob("*.log"),
+    log_files.sort(
         key=lambda path: (
-            path.stat().st_mtime,
+            LOG_PRIORITY.get(path.name, 100),
+            -path.stat().st_mtime,
             str(path),
-        ),
+        )
     )
+
+    sections: list[str] = []
+    remaining_characters = MAX_LOG_CHARACTERS
 
     for log_file in log_files:
         raw_text = log_file.read_text(
@@ -453,26 +485,62 @@ def collect_logs(logs_directory: Path) -> str:
             errors="replace",
         )
 
-        relevant = extract_relevant_lines(raw_text.splitlines())
+        relevant = extract_relevant_lines(
+            raw_text.splitlines()
+        )
 
         if not relevant:
             continue
 
-        relative_name = log_file.relative_to(logs_directory)
+        relative_name = log_file.relative_to(
+            logs_directory
+        )
 
         section = (
             f"\n===== LOG FILE: {relative_name} =====\n"
             + "\n".join(relevant)
         )
 
-        sections.append(section)
+        section = sanitize(section)
 
-    combined = sanitize("\n".join(sections))
+        # Prevent one very large log from consuming the complete prompt.
+        if len(section) > PER_LOG_CHARACTER_LIMIT:
+            header, separator, content = section.partition("\n")
+
+            if separator:
+                allowed_content = (
+                    PER_LOG_CHARACTER_LIMIT
+                    - len(header)
+                    - len(separator)
+                )
+                section = (
+                    header
+                    + separator
+                    + content[-max(0, allowed_content):]
+                )
+            else:
+                section = section[-PER_LOG_CHARACTER_LIMIT:]
+
+        if len(section) > remaining_characters:
+            section = section[:remaining_characters]
+
+        if not section.strip():
+            continue
+
+        sections.append(section)
+        remaining_characters -= len(section)
+
+        if remaining_characters <= 0:
+            break
+
+    combined = "\n".join(sections)
 
     if not combined.strip():
-        raise RuntimeError("No useful pipeline logs were found.")
+        raise RuntimeError(
+            "No useful pipeline failure logs were found."
+        )
 
-    return combined[-MAX_LOG_CHARACTERS:]
+    return combined
 
 
 def build_user_prompt(log_text: str) -> str:
