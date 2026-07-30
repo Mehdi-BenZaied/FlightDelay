@@ -1,0 +1,17 @@
+FROM python:3.12-alpine
+
+WORKDIR /opt/collector
+
+RUN addgroup -g 65532 collector \
+    && adduser -D -u 65532 -G collector collector \
+    && mkdir -p /data \
+    && chown collector:collector /data
+
+COPY --chown=collector:collector integrations/jenkins_collector.py ./jenkins_collector.py
+
+USER collector
+
+VOLUME ["/data"]
+
+ENTRYPOINT ["python", "/opt/collector/jenkins_collector.py"]
+

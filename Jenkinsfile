@@ -72,9 +72,11 @@ pipeline {
 
         AI_FALLBACK_ANALYZER_IMAGE = 'python:3.12-alpine'
         AI_SCRIPT         = 'scripts/ai/analyze_failure.py'
+        AI_PUBLISH_SCRIPT = 'scripts/ai/publish_analysis.py'
         AI_OUTPUT_JSON    = 'ai-failure-analysis.json'
         AI_OUTPUT_MD      = 'ai-failure-analysis.md'
         AI_OUTPUT_RAW     = 'ai-raw-response.txt'
+        AI_DASHBOARD_URL  = 'http://localhost:4173'
         CI_LOGS_DIR       = 'ci-logs'
 
         REGISTRY_CREDENTIALS   = 'DockerHub'
@@ -1512,6 +1514,33 @@ PYTHON_PREPARE_EXTERNAL
 
                         exit 0
                     '''
+
+                    script {
+                        if (fileExists(env.AI_OUTPUT_JSON)) {
+                            sh '''#!/usr/bin/env bash
+                                set +e
+                                set +x
+
+                                python3 "$AI_PUBLISH_SCRIPT" \
+                                  --report "$AI_OUTPUT_JSON" \
+                                  --dashboard-url "$AI_DASHBOARD_URL" \
+                                  --token "${AI_DASHBOARD_TOKEN:-}" \
+                                  2>&1 |
+                                  tee "$CI_LOGS_DIR/dashboard-publish.log"
+
+                                PUBLISH_EXIT_CODE="${PIPESTATUS[0]}"
+
+                                if [ "$PUBLISH_EXIT_CODE" -ne 0 ]; then
+                                    echo "Dashboard publication failed with code $PUBLISH_EXIT_CODE."
+                                    echo 'The AI report remains available as a Jenkins artifact.'
+                                fi
+
+                                exit 0
+                            '''
+                        } else {
+                            echo 'No valid AI JSON report was generated; dashboard publication skipped.'
+                        }
+                    }
                 } else {
                     echo 'AI failure analysis is disabled for this build.'
                 }
