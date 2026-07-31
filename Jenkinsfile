@@ -89,6 +89,12 @@ pipeline {
         REGISTRY_CREDENTIALS   = 'DockerHub'
         KUBECONFIG_CREDENTIALS = 'kind-flight-delay-kubeconfig'
 
+        // GitOps repository updated by Jenkins after publishing main images.
+        GITOPS_REPO        = 'https://github.com/Mehdi-BenZaied/flight-delay-gitops.git'
+        GITOPS_BRANCH      = 'main'
+        GITOPS_VALUES      = 'environments/dev/values.yaml'
+        GITOPS_CREDENTIALS = 'github-gitops'
+
         COMPOSE_FILE = 'docker-compose.yml'
 
         HELM_CHART   = 'deploy/helm/flight-delay'
@@ -902,6 +908,151 @@ PYTHON_OLLAMA_CHECK
                             docker push "$FRONTEND_IMAGE:latest"
                             docker push "$BACKEND_IMAGE:latest"
                         fi
+                    '''
+                }
+            }
+        }
+
+        stage('Update GitOps Repository') {
+            when {
+                expression {
+                    params.PUBLISH_IMAGES &&
+                    !params.DEPLOY_KUBERNETES &&
+                    env.SOURCE_BRANCH == 'main'
+                }
+            }
+
+            steps {
+                script { env.LAST_STAGE = 'Update GitOps Repository' }
+
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: env.GITOPS_CREDENTIALS,
+                        usernameVariable: 'GITOPS_USER',
+                        passwordVariable: 'GITOPS_TOKEN'
+                    )
+                ]) {
+                    sh '''#!/usr/bin/env bash
+                        set -Eeuo pipefail
+                        set +x
+
+                        command -v git > /dev/null
+
+                        if ! command -v yq > /dev/null 2>&1; then
+                            echo 'ERROR: yq is required on the Jenkins agent.'
+                            echo 'Install mikefarah/yq, then run the pipeline again.'
+                            exit 1
+                        fi
+
+                        WORKSPACE_ROOT="$(pwd -P)"
+                        GITOPS_DIR="$WORKSPACE_ROOT/.gitops-${BUILD_NUMBER}"
+                        ASKPASS_FILE="$(mktemp)"
+
+                        cleanup() {
+                            rm -f "$ASKPASS_FILE"
+                            rm -rf "$GITOPS_DIR"
+                        }
+
+                        trap cleanup EXIT
+
+                        cat > "$ASKPASS_FILE" <<'GIT_ASKPASS_SCRIPT'
+#!/bin/sh
+case "$1" in
+    *Username*)
+        printf '%s\n' "$GITOPS_USER"
+        ;;
+    *Password*)
+        printf '%s\n' "$GITOPS_TOKEN"
+        ;;
+esac
+GIT_ASKPASS_SCRIPT
+
+                        chmod 700 "$ASKPASS_FILE"
+
+                        export GIT_ASKPASS="$ASKPASS_FILE"
+                        export GIT_TERMINAL_PROMPT=0
+                        export FRONTEND_IMAGE
+                        export BACKEND_IMAGE
+                        export IMAGE_TAG
+
+                        update_succeeded=false
+
+                        for attempt in 1 2 3; do
+                            echo "GitOps update attempt $attempt/3"
+
+                            rm -rf "$GITOPS_DIR"
+
+                            git clone \
+                              --branch "$GITOPS_BRANCH" \
+                              --single-branch \
+                              "$GITOPS_REPO" \
+                              "$GITOPS_DIR"
+
+                            cd "$GITOPS_DIR"
+
+                            if [ ! -f "$GITOPS_VALUES" ]; then
+                                echo "ERROR: GitOps values file not found: $GITOPS_VALUES"
+                                exit 1
+                            fi
+
+                            yq -i '
+                              .frontend.image.repository = strenv(FRONTEND_IMAGE) |
+                              .frontend.image.tag = strenv(IMAGE_TAG) |
+                              .backend.image.repository = strenv(BACKEND_IMAGE) |
+                              .backend.image.tag = strenv(IMAGE_TAG) |
+                              .analytics.image.repository = strenv(BACKEND_IMAGE) |
+                              .analytics.image.tag = strenv(IMAGE_TAG)
+                            ' "$GITOPS_VALUES"
+
+                            echo '===== GitOps image values ====='
+
+                            yq '
+                              {
+                                "frontend": .frontend.image,
+                                "backend": .backend.image,
+                                "analytics": .analytics.image
+                              }
+                            ' "$GITOPS_VALUES"
+
+                            git config \
+                              user.name \
+                              'jenkins-flight-delay'
+
+                            git config \
+                              user.email \
+                              'jenkins-flight-delay@users.noreply.github.com'
+
+                            git add "$GITOPS_VALUES"
+
+                            if git diff --cached --quiet; then
+                                echo 'GitOps already contains the requested image tag.'
+                                update_succeeded=true
+                                break
+                            fi
+
+                            git commit \
+                              -m "deploy(dev): ${IMAGE_TAG}"
+
+                            if git push \
+                              origin \
+                              "HEAD:${GITOPS_BRANCH}"
+                            then
+                                update_succeeded=true
+                                break
+                            fi
+
+                            echo 'The GitOps branch changed during the push. Retrying from the latest remote state.'
+
+                            cd "$WORKSPACE_ROOT"
+                            sleep "$((attempt * 2))"
+                        done
+
+                        if [ "$update_succeeded" != true ]; then
+                            echo 'ERROR: GitOps repository update failed after 3 attempts.'
+                            exit 1
+                        fi
+
+                        echo "GitOps repository updated with image tag: $IMAGE_TAG"
                     '''
                 }
             }
