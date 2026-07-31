@@ -111,7 +111,7 @@ services:
         - CMD-SHELL
         - >-
           curl --fail --silent --show-error
-          http://127.0.0.1:5000/invalid_health
+          http://127.0.0.1:5000/health
           > /dev/null
           || exit 1
       interval: 10s
