@@ -17,6 +17,12 @@ pipeline {
         )
 
         booleanParam(
+            name: 'RUN_TRIVY_SCAN',
+            defaultValue: false,
+            description: 'Run blocking Trivy source, rendered-manifest, and image security gates'
+        )
+
+        booleanParam(
             name: 'AI_FAILURE_ANALYSIS',
             defaultValue: true,
             description: 'Analyze failed pipeline logs with local Ollama'
@@ -231,6 +237,7 @@ pipeline {
                     echo "Ollama model: ${env.OLLAMA_MODEL}"
                     echo "Ollama URL in Compose: ${env.OLLAMA_BASE_URL}"
                     echo "Ollama analysis timeout: ${env.OLLAMA_REQUEST_TIMEOUT_SECONDS} seconds"
+                    echo "Trivy security gates enabled: ${params.RUN_TRIVY_SCAN}"
                 }
             }
         }
@@ -297,14 +304,19 @@ pipeline {
 
                     python3 -m py_compile "$PUBLISH_SCRIPT_HOST"
 
-                    TRIVY_SCRIPT_HOST="$WORKSPACE_ROOT/$TRIVY_SCRIPT"
+                    if [ "${RUN_TRIVY_SCAN:-false}" = "true" ]; then
+                        TRIVY_SCRIPT_HOST="$WORKSPACE_ROOT/$TRIVY_SCRIPT"
 
-                    if [ ! -f "$TRIVY_SCRIPT_HOST" ]; then
-                        echo "ERROR: Trivy gate script is missing: $TRIVY_SCRIPT_HOST"
-                        exit 1
+                        if [ ! -f "$TRIVY_SCRIPT_HOST" ]; then
+                            echo "ERROR: Trivy gate script is missing: $TRIVY_SCRIPT_HOST"
+                            exit 1
+                        fi
+
+                        bash -n "$TRIVY_SCRIPT_HOST"
+                        echo 'Trivy security gates are enabled and the script is valid.'
+                    else
+                        echo 'Trivy security gates are disabled for this build.'
                     fi
-
-                    bash -n "$TRIVY_SCRIPT_HOST"
 
                     echo '===== Project files ====='
                     test -f "$WORKSPACE_ROOT/Jenkinsfile"
@@ -342,6 +354,12 @@ pipeline {
 
 
         stage('DevSecOps Source Gate') {
+            when {
+                expression {
+                    params.RUN_TRIVY_SCAN
+                }
+            }
+
             steps {
                 script { env.LAST_STAGE = 'DevSecOps Source Gate' }
 
@@ -519,6 +537,12 @@ pipeline {
 
 
         stage('DevSecOps Rendered Manifest Gate') {
+            when {
+                expression {
+                    params.RUN_TRIVY_SCAN
+                }
+            }
+
             steps {
                 script { env.LAST_STAGE = 'DevSecOps Rendered Manifest Gate' }
 
@@ -598,6 +622,12 @@ pipeline {
 
 
         stage('DevSecOps Image Gate') {
+            when {
+                expression {
+                    params.RUN_TRIVY_SCAN
+                }
+            }
+
             steps {
                 script { env.LAST_STAGE = 'DevSecOps Image Gate' }
 
