@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""Analyze current-build logs from a Jenkins Scripted Pipeline with Ollama.
+
+The analyzer combines a constrained Ollama response with deterministic,
+evidence-grounded signatures for high-risk failures such as Docker daemon
+outages, Docker Compose health failures, Kubernetes probes, Helm failures,
+and Helm/Argo CD managed-field conflicts.
+"""
 
 from __future__ import annotations
 
@@ -34,6 +41,7 @@ IGNORED_ANALYSIS_LOGS = {
 }
 
 ALWAYS_INCLUDE_LOGS = {
+    "helm-deploy.log",
     "failure-summary.log",
     "pipeline-context.log",
     "docker-compose-health.log",
@@ -41,19 +49,33 @@ ALWAYS_INCLUDE_LOGS = {
 }
 
 LOG_PRIORITY = {
-    "failure-summary.log": 0,
-    "pipeline-context.log": 1,
-    "docker-daemon-check.log": 2,
-    "docker-compose-health.log": 2,
-    "jenkins-console.log": 3,
-    "simulated-failure.log": 3,
-    "docker-compose-failure.log": 4,
-    "docker-compose-integration.log": 5,
-    "build-backend.log": 6,
-    "build-frontend.log": 6,
-    "validate-compose.log": 7,
-    "kubernetes-failure.log": 8,
+    "helm-deploy.log": 0,
+    "failure-summary.log": 1,
+    "pipeline-context.log": 2,
+    "docker-daemon-check.log": 3,
+    "docker-compose-health.log": 3,
+    "jenkins-console.log": 4,
+    "simulated-failure.log": 4,
+    "docker-compose-failure.log": 5,
+    "docker-compose-integration.log": 6,
+    "build-backend.log": 7,
+    "build-frontend.log": 7,
+    "validate-compose.log": 8,
+    "kubernetes-failure.log": 9,
     "final-compose-state.log": 20,
+}
+
+DOCKER_COMPOSE_LOG_NAMES = {
+    "docker-compose-health.log",
+    "docker-compose-failure.log",
+    "docker-compose-integration.log",
+    "final-compose-state.log",
+    "validate-compose.log",
+}
+
+KUBERNETES_LOG_NAMES = {
+    "helm-deploy.log",
+    "kubernetes-failure.log",
 }
 
 
@@ -95,135 +117,102 @@ ERROR_PATTERN = re.compile(
     |crashloopbackoff
     |imagepullbackoff
     |errimagepull
+    |upgrade\s+failed
+    |rollback.*failed
+    |conflict\s+occurred\s+while\s+applying\s+object
+    |apply\s+failed\s+with\s+\d+\s+conflict
+    |conflict\s+with\s+["']?argocd-controller
+    |field\s+manager
+    |managedfields
+    |readiness\s+probe\s+failed
+    |liveness\s+probe\s+failed
     """,
     re.IGNORECASE | re.VERBOSE,
 )
 
 
 SYSTEM_PROMPT = """
-You are a senior DevOps/SRE CI/CD failure-triage assistant.
+You are a senior DevOps/SRE assistant analyzing failures from a Jenkins Scripted Pipeline.
 
-Environment you are analyzing:
+Important Jenkins context:
+
+- This is a Scripted Pipeline, not a Declarative Pipeline.
+- Stage names are optional labels created by the Groovy script.
+- Do not discuss Declarative Pipeline directives or concepts such as
+  post, when, steps, stages directives, agents directives, or declarative
+  lifecycle behavior.
+- Describe the failure in terms of the command, scripted section, tool,
+  service, or deployment operation that actually failed.
+
+Environment:
 
 - Jenkins controller runs on Windows.
-- Jenkins build agent runs inside Ubuntu WSL.
+- The Jenkins build agent runs inside Ubuntu WSL.
 - Docker Desktop on Windows provides the Docker Engine to WSL.
-- The Jenkins agent label is "linux-docker-agent".
-- The application is FlightDelay, a containerized full-stack application.
-- Frontend: web application served by Nginx, container port 80.
-- Backend: Python API started by run.py, container port 5000.
-- Analytics: Python analytics service started by analytics.py, port 8050.
-- Cache: Redis 7, port 6379.
-- Local database: SQLite stored in /app/data/flight_delay.db.
-- Machine-learning files include ml/models/v1_model.json and
-  data/flight_data.csv.
-- Ollama runs as a Docker Compose service on port 11434.
-- The default Ollama model is qwen2.5-coder:3b-instruct.
-- Docker Compose starts Redis, Ollama, backend, analytics, and frontend.
-- Images are built by Jenkins and may be pushed to Docker Hub.
-- Kubernetes deployment is optional and uses kind plus Helm.
-- Important pipeline stages include:
-  1. Checkout and Metadata
-  2. Validate Parameters
-  3. Validate Agent and Project
-  4. Validate Docker Compose
-  5. Validate Helm Chart
-  6. Build Docker Images
-  7. Docker Compose Integration Tests
-  8. Publish Docker Images
-  9. Optional Kubernetes deployment and smoke tests
+- The Jenkins node label is linux-docker-agent.
+- The application is FlightDelay.
+- Frontend: Nginx on container port 80.
+- Backend: Python API started by run.py on port 5000.
+- Analytics: Python service started by analytics.py on port 8050.
+- Redis runs on port 6379.
+- Ollama runs locally and normally uses qwen2.5-coder:3b-instruct.
+- Images may be built and published to Docker Hub.
+- Kubernetes deployment uses kind, Helm, and may also be managed by Argo CD.
 
-Your task is to diagnose a failed pipeline using only the supplied evidence.
+Your job:
 
-Analysis requirements:
+1. Find the first meaningful error from the current Jenkins build.
+2. Identify the direct cause, not an older event or a later cascading error.
+3. Explain the cause in simple technical language.
+4. Identify the affected command, tool, service, or deployment operation.
+5. Use exact evidence copied from the supplied logs.
+6. Suggest practical and safe next steps.
+7. Keep the answer concise and human-friendly.
+8. Do not invent evidence, filenames, service states, or command results.
+9. Do not expose passwords, tokens, credentials, cookies, or authorization
+   headers.
+10. Do not recommend broad destructive cleanup commands.
+11. Do not suggest increasing a timeout when the logs already show a concrete
+    configuration, ownership, network, image, test, or application error.
+12. If the evidence is incomplete, say exactly what additional log is needed.
 
-1. Identify the first meaningful root-cause error.
-2. Separate the primary root cause from secondary or cascading errors.
-3. Identify the likely failed stage and affected component.
-4. Quote exact evidence from the provided logs.
-5. Do not claim certainty when evidence is incomplete.
-6. Prefer safe diagnostic checks before suggesting changes.
-7. Tailor commands to the correct platform:
-   - bash for Ubuntu WSL / Jenkins agent
-   - PowerShell for Windows / Jenkins controller / Docker Desktop
-8. Never expose, repeat, or reconstruct passwords, tokens, SSH keys,
-   Jenkins secrets, Docker credentials, cookies, or authorization headers.
-9. Never recommend dangerous commands such as:
-   - chmod 777
-   - rm -rf on broad directories
-   - docker system prune -a
-   - deleting databases or volumes
-   unless clearly marked as destructive and absolutely necessary.
-10. Do not recommend increasing timeouts when the logs show a real
-    application, networking, credential, image, or configuration problem.
-11. Explain why each diagnostic command is useful and what result is expected.
-12. If the evidence is insufficient, list the exact additional logs or
-    commands required.
-13. Do not automatically execute any remediation.
-14. Keep the diagnosis technical, direct, and actionable.
+Evidence rules:
 
-Common environment-specific failures to recognize include:
+- Prefer the stderr/stdout of the command that returned the non-zero exit code.
+- Prefer helm-deploy.log for Helm deployment failures.
+- Prefer docker-compose-health.log for Docker Compose health failures.
+- Prefer docker-daemon-check.log for Docker daemon connection failures.
+- Prefer build-specific logs over historical Kubernetes events.
+- A Kubernetes readiness or liveness probe failure is not a Docker Compose
+  health-check failure.
+- A line containing "conflict occurred while applying object" and
+  "argocd-controller" is a Kubernetes managed-field ownership conflict.
+- Helm/Argo CD ownership conflicts must be classified as kubernetes, not
+  docker_compose.
+- Treat rollback failures as secondary when the original Helm upgrade error is
+  available.
+- Ignore errors generated later by AI analysis, dashboard publication, or
+  cleanup unless they are the only failure in the build.
+- Use last_stage only when it is meaningful. The value
+  "Pipeline initialization" is a default placeholder and must not override
+  direct log evidence.
+- Every evidence excerpt must exist verbatim in the supplied logs.
+- Confidence must be between 0 and 1.
+- insufficient_evidence requires confidence below 0.5.
+- When FORCE_AI_FAILURE is true and the controlled-failure marker exists,
+  classify it as an intentional test failure.
 
-- Docker Desktop is not running.
-- /var/run/docker.sock is missing inside WSL.
-- Docker Desktop WSL integration is disabled.
-- Jenkins agent is offline or has no executor.
-- Jenkins is using the wrong WSL home directory.
-- Docker Hub credentials are invalid or image push is denied.
-- Docker image or tag does not exist.
-- Docker Compose configuration is invalid.
-- Docker Compose health checks fail.
-- Redis is unhealthy or unreachable from the backend.
-- The backend cannot find its model, dataset, or SQLite path.
-- Ollama is unreachable, the model pull fails, or memory is insufficient.
-- The backend uses the wrong Ollama URL or model name.
-- The frontend cannot reach the backend service.
-- Helm rendering fails because a value or template is invalid.
-- Kubernetes Service selectors do not match Pod labels.
-- Kubernetes probes use the wrong port or path.
-- Disk space, memory, or Docker build cache is exhausted.
+Output limits for CPU-only execution:
 
-Analyze failures from every pipeline area, including:
+- At most 2 secondary errors.
+- At most 2 evidence items.
+- At most 2 diagnostic checks.
+- At most 2 remediation steps.
+- At most 2 prevention items.
+- At most 2 missing-information items.
+- Avoid repeating the same error in multiple fields.
 
-- checkout and source control
-- Jenkins agent and WSL
-- Docker and Docker Compose
-- frontend, backend, analytics, Redis, SQLite, and Ollama
-- tests and health checks
-- Docker Hub authentication and image publication
-- Helm rendering and Kubernetes deployment
-- network, credentials, configuration, timeout, disk, RAM, and CPU issues
-
-Evidence and consistency requirements:
-
-- Use the metadata field last_stage as the failed stage unless stronger log
-  evidence proves another stage failed first.
-- Every evidence excerpt must appear verbatim in the supplied logs.
-- Never invent a log filename, error message, command result, or service state.
-- The root cause must be supported by at least one evidence excerpt.
-- Do not use evidence describing an unrelated or older failure.
-- Confidence must be a number from 0 to 1, for example 0.75, never 75.
-- When analysis_status is insufficient_evidence, confidence must be below 0.5.
-- If force_ai_failure is true and the logs contain
-  "Controlled failure triggered to validate Ollama analysis.", classify it as
-  test_failure and explain that Jenkins intentionally exited with code 1.
-- Do not report the simulated Redis or backend message as a real outage when
-  force_ai_failure is true.
-- Distinguish the original pipeline failure from errors produced later by the
-  AI-analysis or cleanup process.
-
-Keep the response concise so it can run efficiently on CPU-only hardware:
-
-- Return at most 2 secondary errors.
-- Return at most 2 evidence items.
-- Return at most 2 diagnostic checks.
-- Return at most 2 remediation steps.
-- Return at most 2 prevention items.
-- Return at most 2 missing-information items.
-- Avoid repeating the same error, explanation, or command.
-- Keep each explanation direct and brief.
-
-Return only structured JSON that follows the supplied JSON schema.
+Return only JSON matching the supplied schema.
 """
 
 
@@ -579,30 +568,77 @@ def collect_logs(logs_directory: Path) -> str:
     return combined
 
 
-def high_signal_summary(log_text: str) -> str:
-    selected: list[str] = []
+def high_signal_score(line: str) -> int:
+    normalized = line.lower()
+    score = 10
 
-    for line in log_text.splitlines():
+    strong_patterns = [
+        (
+            140,
+            r"conflict occurred while applying object|"
+            r"conflict with [\"']?argocd-controller|"
+            r"apply failed with \d+ conflict",
+        ),
+        (130, r"\bupgrade failed\b|\brollback.*failed\b"),
+        (
+            120,
+            r"cannot connect to the docker daemon|"
+            r"failed to connect to the docker api|"
+            r"docker\.sock.*no such file",
+        ),
+        (
+            110,
+            r"failed to solve|manifest unknown|"
+            r"pull access denied|imagepullbackoff|errimagepull",
+        ),
+        (100, r"traceback|exception|syntaxerror|modulenotfounderror"),
+        (90, r"exit code [1-9]|forbidden|unauthorized|denied"),
+        (70, r"connection refused|timeout|timed out"),
+        (45, r"readiness probe failed|liveness probe failed"),
+        (40, r"\bunhealthy\b|health.?check|curl:.*\(22\)|\b404\b"),
+    ]
+
+    for candidate_score, pattern in strong_patterns:
+        if re.search(pattern, normalized, re.IGNORECASE):
+            score = max(score, candidate_score)
+
+    # Kubernetes events such as "2d18h Warning Unhealthy" can describe an
+    # older failure. Keep them as context, but do not rank them above the
+    # current command error.
+    if re.search(r"\b\d+d(?:\d+h)?\b", normalized):
+        score -= 35
+
+    if "normal" in normalized and "successful" in normalized:
+        score -= 30
+
+    return score
+
+
+def high_signal_summary(log_text: str) -> str:
+    candidates: list[tuple[int, int, str]] = []
+    seen: set[str] = set()
+
+    for index, line in enumerate(log_text.splitlines()):
         stripped = line.strip()
 
-        if not stripped:
+        if not stripped or stripped.startswith("===== LOG FILE:"):
             continue
 
-        if stripped.startswith("===== LOG FILE:"):
-            continue
+        if ERROR_PATTERN.search(stripped) and stripped not in seen:
+            seen.add(stripped)
+            candidates.append(
+                (high_signal_score(stripped), index, stripped)
+            )
 
-        if ERROR_PATTERN.search(stripped):
-            if stripped not in selected:
-                selected.append(stripped)
-
-        if len(selected) >= 30:
-            break
-
-    if not selected:
+    if not candidates:
         return "No high-signal error line was extracted."
 
-    return "\n".join(f"- {line}" for line in selected)
+    candidates.sort(key=lambda item: (-item[0], item[1]))
 
+    return "\n".join(
+        f"- {line}"
+        for _, _, line in candidates[:30]
+    )
 
 def build_user_prompt(log_text: str) -> str:
     metadata = {
@@ -613,43 +649,44 @@ def build_user_prompt(log_text: str) -> str:
             "SOURCE_BRANCH",
             os.getenv("BRANCH_NAME", "unknown"),
         ),
-        "commit": os.getenv("SHORT_SHA", "unknown"),
-        "node_name": os.getenv("NODE_NAME", "unknown"),
-        "workspace": os.getenv("WORKSPACE", "unknown"),
+        "commit": os.getenv(
+            "SHORT_SHA",
+            os.getenv("GIT_COMMIT", "unknown"),
+        ),
+        "node": os.getenv("NODE_NAME", "unknown"),
         "last_stage": os.getenv("LAST_STAGE", "unknown"),
         "build_result": os.getenv("BUILD_RESULT", "FAILURE"),
         "force_ai_failure": os.getenv(
             "FORCE_AI_FAILURE",
             "false",
         ).lower(),
+        "pipeline_style": "scripted",
     }
 
     return f"""
-Analyze the Jenkins pipeline failure below.
+Analyze the current Jenkins Scripted Pipeline failure.
 
-Pipeline metadata:
+Build metadata:
 
 {json.dumps(metadata, indent=2)}
 
-Instructions:
+Required behavior:
 
-- Find the earliest meaningful root cause of the current build failure.
-- Use last_stage to identify where Jenkins was executing when it failed.
-- Do not treat repeated retries or cleanup errors as separate root causes.
-- Use only exact log excerpts as evidence.
-- Never invent evidence or a log filename.
-- Make sure the root cause and evidence describe the same failure.
-- Provide commands that match this Windows + WSL environment.
-- Do not output secrets.
-- Return confidence as a number between 0 and 1.
-- If the root cause cannot be proved, use
-  analysis_status="insufficient_evidence" and confidence below 0.5.
+- Diagnose the command or scripted section that actually returned the failure.
+- Do not reference Jenkins Declarative Pipeline syntax or lifecycle concepts.
+- Prefer the earliest direct command error from the current build.
+- Treat retries, rollback errors, old Kubernetes events, publication errors,
+  and cleanup errors as secondary unless no earlier error exists.
+- Use only exact log excerpts.
+- Keep the explanation direct and understandable.
+- Return confidence from 0 to 1.
+- Use insufficient_evidence when the logs do not prove a cause.
 
-Pre-extracted high-signal error lines:
+Highest-priority extracted lines:
 
 {high_signal_summary(log_text)}
 
-Sanitized and reduced pipeline logs:
+Sanitized current-build logs:
 
 {log_text}
 """
@@ -855,9 +892,77 @@ def current_log_file(
     return "pipeline logs"
 
 
+def original_log_file_from_grep(excerpt: str) -> str | None:
+    match = re.search(
+        r"(?:^|[\\/])(?P<name>[^\\/:\s]+\.log):\d+:",
+        excerpt,
+    )
+
+    if match:
+        return match.group("name")
+
+    match = re.match(
+        r"(?P<name>[^:\s]+\.log):\d+:",
+        excerpt,
+    )
+
+    return match.group("name") if match else None
+
+
+def resolved_log_file(
+    lines: list[str],
+    index: int,
+    excerpt: str,
+) -> str:
+    return (
+        original_log_file_from_grep(excerpt)
+        or current_log_file(lines, index)
+    )
+
+
+def is_kubernetes_evidence(
+    log_file: str,
+    excerpt: str,
+) -> bool:
+    normalized = excerpt.lower()
+
+    return (
+        log_file in KUBERNETES_LOG_NAMES
+        or "kubernetes-failure.log:" in normalized
+        or "helm-deploy.log:" in normalized
+        or "pod/" in normalized
+        or "deployment/" in normalized
+        or "readiness probe" in normalized
+        or "liveness probe" in normalized
+        or "kubectl " in normalized
+        or "helm upgrade" in normalized
+        or "upgrade failed" in normalized
+        or "argocd-controller" in normalized
+    )
+
+
+def is_docker_compose_evidence(
+    log_file: str,
+    excerpt: str,
+) -> bool:
+    normalized = excerpt.lower()
+
+    if is_kubernetes_evidence(log_file, excerpt):
+        return False
+
+    return (
+        log_file in DOCKER_COMPOSE_LOG_NAMES
+        or "docker-compose-" in normalized
+        or "docker compose" in normalized
+        or ".state.health" in normalized
+        or "container" in normalized
+    )
+
+
 def find_matching_evidence(
     log_text: str,
     patterns: list[re.Pattern[str]],
+    predicate: Any | None = None,
 ) -> tuple[str, str] | None:
     lines = log_text.splitlines()
 
@@ -867,11 +972,17 @@ def find_matching_evidence(
         if not stripped:
             continue
 
-        if any(pattern.search(stripped) for pattern in patterns):
-            return current_log_file(lines, index), stripped
+        if not any(pattern.search(stripped) for pattern in patterns):
+            continue
+
+        log_file = resolved_log_file(lines, index, stripped)
+
+        if predicate is not None and not predicate(log_file, stripped):
+            continue
+
+        return log_file, stripped
 
     return None
-
 
 def base_fallback_result(
     *,
@@ -902,8 +1013,8 @@ def base_fallback_result(
                 "interpretation": interpretation,
             }
         ],
-        "checks": checks[:4],
-        "remediation_steps": remediation_steps[:4],
+        "checks": checks[:2],
+        "remediation_steps": remediation_steps[:2],
         "prevention": [],
         "missing_information": [],
         "confidence": confidence,
@@ -913,7 +1024,12 @@ def base_fallback_result(
 def deterministic_fallback(
     log_text: str,
 ) -> dict[str, Any] | None:
-    stage = os.getenv("LAST_STAGE", "unknown")
+    recorded_stage = os.getenv("LAST_STAGE", "unknown")
+    stage = (
+        recorded_stage
+        if recorded_stage not in {"unknown", "Pipeline initialization"}
+        else "unknown"
+    )
 
     docker_daemon = find_matching_evidence(
         log_text,
@@ -994,88 +1110,6 @@ def deterministic_fallback(
             ],
         )
 
-    health_failure = find_matching_evidence(
-        log_text,
-        [
-            re.compile(r"\bunhealthy\b", re.IGNORECASE),
-            re.compile(r"curl:\s*\(22\)", re.IGNORECASE),
-            re.compile(r"\b404\b", re.IGNORECASE),
-            re.compile(
-                r"health\s*check.*fail",
-                re.IGNORECASE,
-            ),
-        ],
-    )
-
-    if health_failure:
-        log_file, excerpt = health_failure
-
-        return base_fallback_result(
-            stage=stage,
-            component="Docker Compose service health check",
-            category="docker_compose",
-            summary=(
-                "A Docker Compose service did not pass its "
-                "configured health check."
-            ),
-            root_cause=(
-                "The service health-check command or URL failed. "
-                "Inspect the recorded container health output to "
-                "identify the exact HTTP status or command error."
-            ),
-            log_file=log_file,
-            excerpt=excerpt,
-            interpretation=(
-                "This line directly shows the service health "
-                "failure observed by Docker Compose."
-            ),
-            confidence=0.90,
-            checks=[
-                {
-                    "platform": "Docker",
-                    "command": (
-                        "docker inspect <container> "
-                        "--format '{{json .State.Health}}'"
-                    ),
-                    "purpose": (
-                        "Read the exact health-check commands, "
-                        "exit codes, and output."
-                    ),
-                    "expected_result": (
-                        "The failing URL or command is visible in "
-                        "the latest health-check entry."
-                    ),
-                },
-                {
-                    "platform": "WSL",
-                    "command": (
-                        "docker compose ps --all"
-                    ),
-                    "purpose": (
-                        "Identify which Compose service is "
-                        "unhealthy."
-                    ),
-                    "expected_result": (
-                        "The affected service is marked unhealthy."
-                    ),
-                },
-            ],
-            remediation_steps=[
-                {
-                    "priority": "high",
-                    "action": (
-                        "Correct the failing health-check URL, "
-                        "port, path, or command and rerun the "
-                        "integration test."
-                    ),
-                    "command": (
-                        "docker compose config"
-                    ),
-                    "risk": "review_required",
-                }
-            ],
-        )
-
     controlled_marker = (
         "Controlled failure triggered to validate "
         "Ollama analysis."
@@ -1107,6 +1141,295 @@ def deterministic_fallback(
             confidence=1.0,
             checks=[],
             remediation_steps=[],
+        )
+
+    helm_conflict = find_matching_evidence(
+        log_text,
+        [
+            re.compile(
+                r"conflict occurred while applying object",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                r"apply failed with \d+ conflict",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                r"conflict with [\"']?argocd-controller",
+                re.IGNORECASE,
+            ),
+        ],
+    )
+
+    if helm_conflict:
+        log_file, excerpt = helm_conflict
+
+        return base_fallback_result(
+            stage="Deploy with Helm",
+            component="Helm / Argo CD field ownership",
+            category="kubernetes",
+            summary=(
+                "The Helm upgrade failed because Argo CD already "
+                "owns the Deployment image fields."
+            ),
+            root_cause=(
+                "Helm and argocd-controller attempted to manage "
+                "the same container image fields through "
+                "server-side apply. Kubernetes rejected the "
+                "change as a managed-field conflict."
+            ),
+            log_file=log_file,
+            excerpt=excerpt,
+            interpretation=(
+                "The deployment command directly reports an "
+                "apply conflict with argocd-controller."
+            ),
+            confidence=0.99,
+            checks=[
+                {
+                    "platform": "Kubernetes",
+                    "command": (
+                        "kubectl -n flight-delay-helm get deployment "
+                        "flight-delay-dev-backend "
+                        "--show-managed-fields -o yaml"
+                    ),
+                    "purpose": (
+                        "Confirm which field managers own the "
+                        "backend image field."
+                    ),
+                    "expected_result": (
+                        "managedFields shows argocd-controller "
+                        "owning the container image path."
+                    ),
+                },
+                {
+                    "platform": "Kubernetes",
+                    "command": (
+                        "kubectl -n flight-delay-helm get deployment "
+                        "flight-delay-dev-frontend "
+                        "-o jsonpath='{.spec.template.spec.containers[*].image}'"
+                    ),
+                    "purpose": (
+                        "Check which image is currently reconciled "
+                        "in the cluster."
+                    ),
+                    "expected_result": (
+                        "The image reflects the GitOps source "
+                        "currently applied by Argo CD."
+                    ),
+                },
+            ],
+            remediation_steps=[
+                {
+                    "priority": "high",
+                    "action": (
+                        "Use one deployment owner. Since Argo CD "
+                        "manages these Deployments, update image "
+                        "tags in the GitOps repository and let "
+                        "Argo CD synchronize them instead of "
+                        "running a competing Helm upgrade."
+                    ),
+                    "command": (
+                        "git diff -- deploy/helm/flight-delay/values-dev.yaml"
+                    ),
+                    "risk": "review_required",
+                },
+                {
+                    "priority": "medium",
+                    "action": (
+                        "Remove the direct Helm deployment step "
+                        "for Argo CD-managed resources, or disable "
+                        "Argo CD management before intentionally "
+                        "returning ownership to Helm."
+                    ),
+                    "command": "",
+                    "risk": "review_required",
+                },
+            ],
+        )
+
+    helm_upgrade_failure = find_matching_evidence(
+        log_text,
+        [
+            re.compile(r"\bupgrade failed\b", re.IGNORECASE),
+            re.compile(r"\brollback.*failed\b", re.IGNORECASE),
+        ],
+    )
+
+    if helm_upgrade_failure:
+        log_file, excerpt = helm_upgrade_failure
+
+        return base_fallback_result(
+            stage="Deploy with Helm",
+            component="Helm deployment",
+            category="kubernetes",
+            summary="The Helm deployment command failed.",
+            root_cause=excerpt,
+            log_file=log_file,
+            excerpt=excerpt,
+            interpretation=(
+                "This is the direct Helm upgrade or rollback "
+                "failure from the deployment command."
+            ),
+            confidence=0.94,
+            checks=[
+                {
+                    "platform": "Kubernetes",
+                    "command": (
+                        "helm status flight-delay-dev "
+                        "-n flight-delay-helm"
+                    ),
+                    "purpose": (
+                        "Inspect the release state after the "
+                        "failed upgrade."
+                    ),
+                    "expected_result": (
+                        "The release status and latest failed "
+                        "revision are displayed."
+                    ),
+                }
+            ],
+            remediation_steps=[],
+        )
+
+    kubernetes_probe_failure = find_matching_evidence(
+        log_text,
+        [
+            re.compile(
+                r"readiness\s+probe\s+failed",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                r"liveness\s+probe\s+failed",
+                re.IGNORECASE,
+            ),
+        ],
+        predicate=is_kubernetes_evidence,
+    )
+
+    if kubernetes_probe_failure:
+        log_file, excerpt = kubernetes_probe_failure
+
+        return base_fallback_result(
+            stage=(
+                stage
+                if stage != "unknown"
+                else "Verify Kubernetes Deployment"
+            ),
+            component="Kubernetes Pod probe",
+            category="kubernetes",
+            summary=(
+                "A Kubernetes Pod failed its configured probe."
+            ),
+            root_cause=excerpt,
+            log_file=log_file,
+            excerpt=excerpt,
+            interpretation=(
+                "This is a Kubernetes readiness or liveness "
+                "probe failure, not a Docker Compose health check."
+            ),
+            confidence=0.86,
+            checks=[
+                {
+                    "platform": "Kubernetes",
+                    "command": (
+                        "kubectl -n flight-delay-helm describe pod "
+                        "<pod-name>"
+                    ),
+                    "purpose": (
+                        "Inspect the failing probe configuration "
+                        "and recent events."
+                    ),
+                    "expected_result": (
+                        "The probe path, port, and latest failure "
+                        "message are visible."
+                    ),
+                }
+            ],
+            remediation_steps=[],
+        )
+
+    health_failure = find_matching_evidence(
+        log_text,
+        [
+            re.compile(r"\bunhealthy\b", re.IGNORECASE),
+            re.compile(r"curl:\s*\(22\)", re.IGNORECASE),
+            re.compile(r"\b404\b", re.IGNORECASE),
+            re.compile(
+                r"health\s*check.*fail",
+                re.IGNORECASE,
+            ),
+        ],
+        predicate=is_docker_compose_evidence,
+    )
+
+    if health_failure:
+        log_file, excerpt = health_failure
+
+        return base_fallback_result(
+            stage=(
+                stage
+                if stage != "unknown"
+                else "Docker Compose Integration Tests"
+            ),
+            component="Docker Compose service health check",
+            category="docker_compose",
+            summary=(
+                "A Docker Compose service did not pass its "
+                "configured health check."
+            ),
+            root_cause=(
+                "The Compose health-check command or URL failed. "
+                "Inspect the recorded container health output to "
+                "identify the exact HTTP status or command error."
+            ),
+            log_file=log_file,
+            excerpt=excerpt,
+            interpretation=(
+                "This line comes from Docker Compose container "
+                "health diagnostics."
+            ),
+            confidence=0.90,
+            checks=[
+                {
+                    "platform": "Docker",
+                    "command": (
+                        "docker inspect <container> "
+                        "--format '{{json .State.Health}}'"
+                    ),
+                    "purpose": (
+                        "Read the exact health-check commands, "
+                        "exit codes, and output."
+                    ),
+                    "expected_result": (
+                        "The failing URL or command is visible in "
+                        "the latest health-check entry."
+                    ),
+                },
+                {
+                    "platform": "WSL",
+                    "command": "docker compose ps --all",
+                    "purpose": (
+                        "Identify which Compose service is "
+                        "unhealthy."
+                    ),
+                    "expected_result": (
+                        "The affected service is marked unhealthy."
+                    ),
+                },
+            ],
+            remediation_steps=[
+                {
+                    "priority": "high",
+                    "action": (
+                        "Correct the failing Compose health-check "
+                        "URL, port, path, or command and rerun the "
+                        "integration test."
+                    ),
+                    "command": "docker compose config",
+                    "risk": "review_required",
+                }
+            ],
         )
 
     generic_patterns = [
@@ -1164,7 +1487,6 @@ def deterministic_fallback(
 
     return None
 
-
 def normalize_result(
     result: dict[str, Any],
     log_text: str,
@@ -1206,14 +1528,37 @@ def normalize_result(
                 }
             )
 
-    result["evidence"] = grounded_evidence[:3]
+    result["evidence"] = grounded_evidence[:2]
 
     last_stage = os.getenv("LAST_STAGE", "unknown")
 
-    if last_stage and last_stage != "unknown":
+    # "Pipeline initialization" is only the environment default. It must not
+    # overwrite a stage inferred from a direct Helm/Kubernetes error.
+    if last_stage not in {"", "unknown", "Pipeline initialization"}:
         result["failed_stage"] = last_stage
 
     fallback = deterministic_fallback(log_text)
+
+    # Exact signatures are more reliable than a small model's generic
+    # classification. In particular, never convert a Helm/Argo CD conflict or
+    # a Kubernetes probe into a Docker Compose health-check diagnosis.
+    if fallback is not None:
+        fallback_component = fallback.get("failed_component", "")
+        authoritative_components = {
+            "Docker daemon",
+            "Helm / Argo CD field ownership",
+            "Helm deployment",
+            "AI failure-analysis controlled test",
+        }
+
+        if fallback_component in authoritative_components:
+            return fallback
+
+        if (
+            fallback.get("category") == "kubernetes"
+            and result.get("category") == "docker_compose"
+        ):
+            return fallback
 
     if (
         result.get("analysis_status")
@@ -1242,7 +1587,7 @@ def normalize_result(
             missing_information.append(message)
 
         result["missing_information"] = (
-            missing_information[:4]
+            missing_information[:2]
         )
 
     if result["analysis_status"] == "insufficient_evidence":
@@ -1253,99 +1598,121 @@ def normalize_result(
 
     return result
 
-
 def render_markdown(result: dict[str, Any]) -> str:
-    status = result["analysis_status"]
-
-    if status == "diagnosed":
-        root_cause_heading = "## Root cause"
-    elif status == "probable":
-        root_cause_heading = "## Probable root cause"
-    else:
-        root_cause_heading = "## Unconfirmed hypothesis"
+    status_labels = {
+        "diagnosed": "Diagnosed",
+        "probable": "Probable",
+        "insufficient_evidence": "Insufficient evidence",
+    }
 
     lines = [
-        "# AI Pipeline Failure Analysis",
+        "# Jenkins Failure Analysis",
         "",
-        f"**Status:** {result['analysis_status']}",
-        f"**Failed stage:** {result['failed_stage']}",
-        f"**Component:** {result['failed_component']}",
+        f"**Status:** {status_labels.get(result['analysis_status'], result['analysis_status'])}",
+        f"**Pipeline location:** {result['failed_stage']}",
+        f"**Affected component:** {result['failed_component']}",
         f"**Category:** {result['category']}",
         f"**Confidence:** {result['confidence']:.0%}",
         "",
-        "## Summary",
+        "## What failed",
         "",
         result["summary"],
         "",
-        root_cause_heading,
+        "## Why it failed",
         "",
         result["root_cause"],
-        "",
-        "## Evidence",
-        "",
     ]
 
-    for evidence in result["evidence"]:
+    if result["evidence"]:
+        lines.extend(["", "## Evidence", ""])
+
+        for evidence in result["evidence"]:
+            lines.extend(
+                [
+                    f"**{evidence['log_file']}**",
+                    "",
+                    "```text",
+                    evidence["excerpt"],
+                    "```",
+                    "",
+                    evidence["interpretation"],
+                    "",
+                ]
+            )
+
+    if result["secondary_errors"]:
+        lines.extend(["## Secondary effects", ""])
         lines.extend(
-            [
-                f"### {evidence['log_file']}",
-                "",
-                "```text",
-                evidence["excerpt"],
-                "```",
-                "",
-                evidence["interpretation"],
-                "",
-            ]
+            f"- {item}"
+            for item in result["secondary_errors"]
         )
+        lines.append("")
 
-    lines.extend(["## Checks", ""])
+    if result["remediation_steps"]:
+        lines.extend(["## Recommended next steps", ""])
 
-    for check in result["checks"]:
-        lines.extend(
-            [
-                f"### {check['platform']}",
-                "",
-                f"Purpose: {check['purpose']}",
-                "",
-                "```text",
-                check["command"],
-                "```",
-                "",
-                f"Expected: {check['expected_result']}",
-                "",
-            ]
-        )
+        for index, step in enumerate(
+            result["remediation_steps"],
+            start=1,
+        ):
+            lines.append(
+                f"{index}. {step['action']} "
+                f"(**{step['priority']}**, {step['risk']})"
+            )
 
-    lines.extend(["## Remediation", ""])
+            command = str(step.get("command", "")).strip()
+            if command:
+                lines.extend(
+                    [
+                        "",
+                        "   Verification command:",
+                        "",
+                        "   ```text",
+                        *[f"   {line}" for line in command.splitlines()],
+                        "   ```",
+                    ]
+                )
 
-    for step in result["remediation_steps"]:
-        lines.extend(
-            [
-                (
-                    f"- **{step['priority'].upper()}** "
-                    f"[{step['risk']}]: {step['action']}"
-                ),
-                "",
-                "```text",
-                step["command"],
-                "```",
-                "",
-            ]
-        )
+        lines.append("")
 
-    lines.extend(["## Prevention", ""])
+    if result["checks"]:
+        lines.extend(["## Useful checks", ""])
 
-    for item in result["prevention"]:
-        lines.append(f"- {item}")
+        for check in result["checks"]:
+            lines.extend(
+                [
+                    f"- **{check['platform']} — {check['purpose']}**",
+                    f"  Expected: {check['expected_result']}",
+                ]
+            )
+
+            command = str(check.get("command", "")).strip()
+            if command:
+                lines.extend(
+                    [
+                        "",
+                        "  ```text",
+                        *[f"  {line}" for line in command.splitlines()],
+                        "  ```",
+                    ]
+                )
+
+        lines.append("")
+
+    if result["prevention"]:
+        lines.extend(["## Prevention", ""])
+        lines.extend(f"- {item}" for item in result["prevention"])
+        lines.append("")
 
     if result["missing_information"]:
-        lines.extend(["", "## Missing information", ""])
+        lines.extend(["## Missing information", ""])
+        lines.extend(
+            f"- {item}"
+            for item in result["missing_information"]
+        )
+        lines.append("")
 
-        for item in result["missing_information"]:
-            lines.append(f"- {item}")
-
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def main() -> int:
