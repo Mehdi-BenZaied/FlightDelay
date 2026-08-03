@@ -5,16 +5,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+
     restart: unless-stopped
     init: true
+
     environment:
       DASHBOARD_INGEST_TOKEN: ${DASHBOARD_INGEST_TOKEN:-}
       HOST: "0.0.0.0"
       PORT: "4173"
+
     ports:
       - "${DASHBOARD_PORT:-4173}:4173"
+
     volumes:
       - flightdelay-ai-dashboard-data:/app/.wrangler/state
+
     healthcheck:
       test:
         - CMD
@@ -22,28 +27,38 @@ services:
         - -e
         - >-
           fetch('http://127.0.0.1:4173/api/health')
-          .then(response => {
+          .then(async response => {
+            const body = await response.text();
+            console.log(body);
             if (!response.ok) process.exit(1);
           })
-          .catch(() => process.exit(1))
+          .catch(error => {
+            console.error(error);
+            process.exit(1);
+          })
       interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 60s
+      retries: 18
+      start_period: 90s
+
     networks:
       - dashboard-network
 
   flightdelay-ai-collector:
     profiles:
       - collector
+
     build:
       context: .
       dockerfile: integrations/Dockerfile.collector
+
     restart: unless-stopped
     init: true
+
     depends_on:
       flightdelay-ai-dashboard:
         condition: service_healthy
+
     environment:
       JENKINS_BASE_URL: ${JENKINS_BASE_URL:-http://host.docker.internal:8080}
       JENKINS_JOB_PATH: ${JENKINS_JOB_PATH:-job/FlightDelay/job/main}
@@ -56,10 +71,13 @@ services:
       LOOKBACK_BUILDS: ${LOOKBACK_BUILDS:-25}
       AI_ANALYSIS_ARTIFACT: ${AI_ANALYSIS_ARTIFACT:-ai-failure-analysis.json}
       COLLECTOR_STATE_FILE: /data/collector-state.json
+
     extra_hosts:
       - host.docker.internal:host-gateway
+
     volumes:
       - flightdelay-ai-collector-data:/data
+
     networks:
       - dashboard-network
 
