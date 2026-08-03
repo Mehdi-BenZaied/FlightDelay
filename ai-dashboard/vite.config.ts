@@ -8,8 +8,10 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
 
 const { d1, r2 } = hostingConfig;
 
-// macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
-const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
+const isCodexSeatbeltSandbox =
+  process.env.CODEX_SANDBOX === "seatbelt";
+
+const dashboardPort = Number(process.env.PORT ?? "4173");
 
 const localBindingConfig = {
   main: "./worker/index.ts",
@@ -34,28 +36,46 @@ const localBindingConfig = {
 };
 
 export default defineConfig(async () => {
-  // Keep Wrangler and Miniflare state project-local. These are non-secret tool
-  // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
   process.env.WRANGLER_LOG_PATH ??= ".wrangler/logs";
   process.env.MINIFLARE_REGISTRY_PATH ??= ".wrangler/registry";
 
-  // Wrangler snapshots its log path while the Cloudflare plugin is imported.
-  const { cloudflare } = await import("@cloudflare/vite-plugin");
+  const { cloudflare } = await import(
+    "@cloudflare/vite-plugin"
+  );
 
   return {
     server: {
       host: "0.0.0.0",
-      allowedHosts: ["terminal.local"],
+      port: dashboardPort,
+      strictPort: true,
+      allowedHosts: true,
+
+      // The dashboard runs inside a persistent Docker container.
+      // A container restart can briefly disconnect HMR. Do not cover
+      // the whole dashboard with Vite's development error overlay.
+      hmr: {
+        overlay: false,
+      },
+
       ...(isCodexSeatbeltSandbox
-        ? { watch: { useFsEvents: false, usePolling: true } }
+        ? {
+            watch: {
+              useFsEvents: false,
+              usePolling: true,
+            },
+          }
         : {}),
     },
+
     plugins: [
       vinext(),
       sites(),
       cloudflare({
-        viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
+        viteEnvironment: {
+          name: "rsc",
+          childEnvironments: ["ssr"],
+        },
         inspectorPort: false,
         config: localBindingConfig,
       }),
