@@ -10,8 +10,10 @@ TRIVY_CACHE_VOLUME="${TRIVY_CACHE_VOLUME:-flight-delay-trivy-cache}"
 TRIVY_REPORT_DIR="${TRIVY_REPORT_DIR:-security-reports}"
 TRIVY_GATE_SEVERITY="${TRIVY_GATE_SEVERITY:-HIGH,CRITICAL}"
 TRIVY_LICENSE_SEVERITY="${TRIVY_LICENSE_SEVERITY:-CRITICAL}"
+TRIVY_PULL_RETRIES="${TRIVY_PULL_RETRIES:-3}"
 
 REPORT_ROOT="$WORKSPACE_ROOT/$TRIVY_REPORT_DIR"
+PUBLIC_DOCKER_CONFIG=""
 
 declare -a GATE_FAILURES=()
 
@@ -39,29 +41,91 @@ require_command() {
         fail "Required command is unavailable: $1"
 }
 
+cleanup() {
+    if [ -n "${PUBLIC_DOCKER_CONFIG:-}" ] &&
+       [ -d "$PUBLIC_DOCKER_CONFIG" ]; then
+        rm -rf "$PUBLIC_DOCKER_CONFIG"
+    fi
+}
+
+trap cleanup EXIT
+
 slugify() {
     printf '%s' "$1" |
         tr '[:upper:]' '[:lower:]' |
         sed -E 's#[^a-z0-9._-]+#-#g; s#^-+##; s#-+$##'
 }
 
+create_public_docker_config() {
+    PUBLIC_DOCKER_CONFIG="$(
+        mktemp -d \
+            "${TMPDIR:-/tmp}/flightdelay-trivy-docker-config.XXXXXX"
+    )"
+
+    chmod 700 "$PUBLIC_DOCKER_CONFIG"
+
+    cat > "$PUBLIC_DOCKER_CONFIG/config.json" <<'JSON'
+{
+  "auths": {}
+}
+JSON
+
+    chmod 600 "$PUBLIC_DOCKER_CONFIG/config.json"
+}
+
+pull_trivy_image() {
+    if docker image inspect "$TRIVY_IMAGE" >/dev/null 2>&1; then
+        echo "Pinned Trivy image is already available locally: $TRIVY_IMAGE"
+        return
+    fi
+
+    create_public_docker_config
+
+    echo "Pulling pinned Trivy image: $TRIVY_IMAGE"
+    echo "Using an isolated Docker config for this public image pull."
+    echo "This avoids WSL/Docker Desktop credential-helper failures."
+
+    local attempt
+    for attempt in $(seq 1 "$TRIVY_PULL_RETRIES"); do
+        echo "Trivy image pull attempt $attempt/$TRIVY_PULL_RETRIES"
+
+        if DOCKER_CONFIG="$PUBLIC_DOCKER_CONFIG" \
+            docker pull "$TRIVY_IMAGE"
+        then
+            break
+        fi
+
+        if [ "$attempt" -lt "$TRIVY_PULL_RETRIES" ]; then
+            sleep "$((attempt * 3))"
+        fi
+    done
+
+    if ! docker image inspect "$TRIVY_IMAGE" >/dev/null 2>&1; then
+        fail \
+            "Could not pull $TRIVY_IMAGE after $TRIVY_PULL_RETRIES attempts. " \
+            "The isolated Docker configuration bypassed the desktop credential helper, " \
+            "so inspect Docker daemon/network access next."
+    fi
+}
+
 prepare() {
     require_command docker
+    require_command mktemp
     require_command sed
+    require_command seq
     require_command tr
 
     mkdir -p "$REPORT_ROOT"
 
     docker info >/dev/null 2>&1 ||
-        fail "Docker daemon is unavailable. Trivy runs as a container in this project."
+        fail \
+            "Docker daemon is unavailable. " \
+            "Trivy runs as a container in this project."
 
     docker volume inspect "$TRIVY_CACHE_VOLUME" >/dev/null 2>&1 ||
         docker volume create "$TRIVY_CACHE_VOLUME" >/dev/null
 
-    if ! docker image inspect "$TRIVY_IMAGE" >/dev/null 2>&1; then
-        echo "Pulling pinned Trivy image: $TRIVY_IMAGE"
-        docker pull "$TRIVY_IMAGE"
-    fi
+    pull_trivy_image
 
     echo "Trivy image: $TRIVY_IMAGE"
     echo "Gate severities: $TRIVY_GATE_SEVERITY"
@@ -70,7 +134,9 @@ prepare() {
 }
 
 trivy_workspace() {
-    docker run --rm \
+    docker run \
+        --rm \
+        --pull never \
         --volume "$WORKSPACE_ROOT:/workspace:ro" \
         --volume "$TRIVY_CACHE_VOLUME:/root/.cache/" \
         --workdir /workspace \
@@ -79,7 +145,9 @@ trivy_workspace() {
 }
 
 trivy_image() {
-    docker run --rm \
+    docker run \
+        --rm \
+        --pull never \
         --volume "$WORKSPACE_ROOT:/workspace:ro" \
         --volume "$TRIVY_CACHE_VOLUME:/root/.cache/" \
         --volume /var/run/docker.sock:/var/run/docker.sock \
@@ -122,6 +190,7 @@ run_gate_with_reports() {
     fi
 
     set +e
+
     "$runner" "${scan_args[@]}" \
         --format table \
         --exit-code 1 \
@@ -130,6 +199,7 @@ run_gate_with_reports() {
         tee "${report_base}.txt"
 
     exit_code="${PIPESTATUS[0]}"
+
     set -e
 
     if [ "$exit_code" -ne 0 ]; then
@@ -268,6 +338,7 @@ scan_one_image() {
     local image_slug
 
     image_slug="$(slugify "$image")"
+
     [ -n "$image_slug" ] ||
         fail "Could not derive a report name from image: $image"
 
