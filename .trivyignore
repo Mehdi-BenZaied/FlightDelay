@@ -1,0 +1,10 @@
+# Trivy exception file.
+#
+# Keep this file empty until a finding has been reviewed.
+# Never ignore a finding only to make the pipeline green.
+#
+# For every future exception:
+# - include only the exact CVE/check/secret rule ID;
+# - document the business reason in the pull request;
+# - assign an owner and an expiry date in the pull request;
+# - remove the exception as soon as the dependency or configuration is fixed.

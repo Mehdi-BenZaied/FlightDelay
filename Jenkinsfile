@@ -86,6 +86,13 @@ pipeline {
 
         CI_LOGS_DIR = 'ci-logs'
 
+        TRIVY_IMAGE            = 'aquasec/trivy:0.70.0'
+        TRIVY_CACHE_VOLUME     = 'flight-delay-trivy-cache'
+        TRIVY_REPORT_DIR       = 'security-reports'
+        TRIVY_GATE_SEVERITY    = 'HIGH,CRITICAL'
+        TRIVY_LICENSE_SEVERITY = 'CRITICAL'
+        TRIVY_SCRIPT           = 'scripts/security/trivy-gate.sh'
+
         REGISTRY_CREDENTIALS   = 'DockerHub'
         KUBECONFIG_CREDENTIALS = 'kind-flight-delay-kubeconfig'
 
@@ -290,6 +297,15 @@ pipeline {
 
                     python3 -m py_compile "$PUBLISH_SCRIPT_HOST"
 
+                    TRIVY_SCRIPT_HOST="$WORKSPACE_ROOT/$TRIVY_SCRIPT"
+
+                    if [ ! -f "$TRIVY_SCRIPT_HOST" ]; then
+                        echo "ERROR: Trivy gate script is missing: $TRIVY_SCRIPT_HOST"
+                        exit 1
+                    fi
+
+                    bash -n "$TRIVY_SCRIPT_HOST"
+
                     echo '===== Project files ====='
                     test -f "$WORKSPACE_ROOT/Jenkinsfile"
                     test -f "$WORKSPACE_ROOT/$COMPOSE_FILE"
@@ -320,6 +336,24 @@ pipeline {
 
                     echo 'AI script found and Python syntax is valid.'
                     echo 'Agent and project validation succeeded.'
+                '''
+            }
+        }
+
+
+        stage('DevSecOps Source Gate') {
+            steps {
+                script { env.LAST_STAGE = 'DevSecOps Source Gate' }
+
+                sh '''#!/usr/bin/env bash
+                    set -Eeuo pipefail
+
+                    mkdir -p "$CI_LOGS_DIR"
+                    chmod +x "$TRIVY_SCRIPT"
+
+                    "$TRIVY_SCRIPT" source \
+                      2>&1 |
+                      tee "$CI_LOGS_DIR/trivy-source-gate.log"
                 '''
             }
         }
@@ -483,6 +517,24 @@ pipeline {
             }
         }
 
+
+        stage('DevSecOps Rendered Manifest Gate') {
+            steps {
+                script { env.LAST_STAGE = 'DevSecOps Rendered Manifest Gate' }
+
+                sh '''#!/usr/bin/env bash
+                    set -Eeuo pipefail
+
+                    mkdir -p "$CI_LOGS_DIR"
+                    chmod +x "$TRIVY_SCRIPT"
+
+                    "$TRIVY_SCRIPT" config flight-delay-rendered.yaml \
+                      2>&1 |
+                      tee "$CI_LOGS_DIR/trivy-rendered-manifest-gate.log"
+                '''
+            }
+        }
+
         stage('Build Docker Images') {
             parallel {
                 stage('Build Frontend') {
@@ -540,6 +592,26 @@ pipeline {
                     docker image inspect \
                       "$BACKEND_REF" \
                       --format='Backend size: {{.Size}} bytes'
+                '''
+            }
+        }
+
+
+        stage('DevSecOps Image Gate') {
+            steps {
+                script { env.LAST_STAGE = 'DevSecOps Image Gate' }
+
+                sh '''#!/usr/bin/env bash
+                    set -Eeuo pipefail
+
+                    mkdir -p "$CI_LOGS_DIR"
+                    chmod +x "$TRIVY_SCRIPT"
+
+                    "$TRIVY_SCRIPT" images \
+                      "$FRONTEND_REF" \
+                      "$BACKEND_REF" \
+                      2>&1 |
+                      tee "$CI_LOGS_DIR/trivy-image-gate.log"
                 '''
             }
         }
@@ -1384,6 +1456,14 @@ GIT_ASKPASS_SCRIPT
     }
 
     post {
+        always {
+            archiveArtifacts(
+                artifacts: 'security-reports/**/*',
+                allowEmptyArchive: true,
+                fingerprint: true
+            )
+        }
+
         success {
             echo "Pipeline succeeded for ${env.SOURCE_BRANCH}: ${env.IMAGE_TAG}"
         }
