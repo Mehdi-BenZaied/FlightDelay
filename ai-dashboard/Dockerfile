@@ -16,7 +16,10 @@ ENV NODE_ENV=production
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 
-RUN npm run build
+# Fix Windows line endings and executable permissions.
+RUN find scripts -type f -name '*.sh' -exec sed -i 's/\r$//' {} + \
+ && find scripts -type f -name '*.sh' -exec chmod 755 {} + \
+ && npm run build
 
 
 FROM node:22-bookworm-slim AS runtime
@@ -31,4 +34,4 @@ COPY --from=build /app /app
 
 EXPOSE 4173
 
-CMD ["npm", "run", "start", "--", "--host", "0.0.0.0", "--port", "4173"]
+CMD ["npm", "run", "start"]
