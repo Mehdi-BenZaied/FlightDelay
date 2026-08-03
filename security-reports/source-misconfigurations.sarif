@@ -1,0 +1,1700 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "fullName": "Trivy Vulnerability Scanner",
+          "informationUri": "https://github.com/aquasecurity/trivy",
+          "name": "Trivy",
+          "rules": [
+            {
+              "id": "DS-0002",
+              "name": "Misconfiguration",
+              "shortDescription": {
+                "text": "Image user should not be 'root'"
+              },
+              "fullDescription": {
+                "text": "Running containers with 'root' user can lead to a container escape situation. It is a best practice to run containers as non-root users, which can be done by adding a 'USER' statement to the Dockerfile."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/misconfig/ds-0002",
+              "help": {
+                "text": "Misconfiguration DS-0002\nType: Dockerfile Security Check\nSeverity: HIGH\nCheck: Image user should not be 'root'\nMessage: Specify at least 1 USER command in Dockerfile with non-root user as argument\nLink: [DS-0002](https://avd.aquasec.com/misconfig/ds-0002)\nRunning containers with 'root' user can lead to a container escape situation. It is a best practice to run containers as non-root users, which can be done by adding a 'USER' statement to the Dockerfile.",
+                "markdown": "**Misconfiguration DS-0002**\n| Type | Severity | Check | Message | Link |\n| --- | --- | --- | --- | --- |\n|Dockerfile Security Check|HIGH|Image user should not be 'root'|Specify at least 1 USER command in Dockerfile with non-root user as argument|[DS-0002](https://avd.aquasec.com/misconfig/ds-0002)|\n\nRunning containers with 'root' user can lead to a container escape situation. It is a best practice to run containers as non-root users, which can be done by adding a 'USER' statement to the Dockerfile."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "8.0",
+                "tags": [
+                  "misconfiguration",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "KSV-0014",
+              "name": "Misconfiguration",
+              "shortDescription": {
+                "text": "Root file system is not read-only"
+              },
+              "fullDescription": {
+                "text": "An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/misconfig/ksv-0014",
+              "help": {
+                "text": "Misconfiguration KSV-0014\nType: Kubernetes Security Check\nSeverity: HIGH\nCheck: Root file system is not read-only\nMessage: Container 'grafana-sc-datasources' of Deployment 'monitoring-grafana' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)\nAn immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.",
+                "markdown": "**Misconfiguration KSV-0014**\n| Type | Severity | Check | Message | Link |\n| --- | --- | --- | --- | --- |\n|Kubernetes Security Check|HIGH|Root file system is not read-only|Container 'grafana-sc-datasources' of Deployment 'monitoring-grafana' should set 'securityContext.readOnlyRootFilesystem' to true|[KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)|\n\nAn immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "8.0",
+                "tags": [
+                  "misconfiguration",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "KSV-0118",
+              "name": "Misconfiguration",
+              "shortDescription": {
+                "text": "Default security context configured"
+              },
+              "fullDescription": {
+                "text": "Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/misconfig/ksv-0118",
+              "help": {
+                "text": "Misconfiguration KSV-0118\nType: Kubernetes Security Check\nSeverity: HIGH\nCheck: Default security context configured\nMessage: deployment flight-delay-dev-redis in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)\nSecurity context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.",
+                "markdown": "**Misconfiguration KSV-0118**\n| Type | Severity | Check | Message | Link |\n| --- | --- | --- | --- | --- |\n|Kubernetes Security Check|HIGH|Default security context configured|deployment flight-delay-dev-redis in default namespace is using the default security context, which allows root privileges|[KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)|\n\nSecurity context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "8.0",
+                "tags": [
+                  "misconfiguration",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "KSV-0009",
+              "name": "Misconfiguration",
+              "shortDescription": {
+                "text": "Access to host network"
+              },
+              "fullDescription": {
+                "text": "Sharing the host’s network namespace permits processes in the pod to communicate with processes bound to the host’s loopback adapter."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/misconfig/ksv-0009",
+              "help": {
+                "text": "Misconfiguration KSV-0009\nType: Kubernetes Security Check\nSeverity: HIGH\nCheck: Access to host network\nMessage: DaemonSet 'monitoring-prometheus-node-exporter' should not set 'spec.template.spec.hostNetwork' to true\nLink: [KSV-0009](https://avd.aquasec.com/misconfig/ksv-0009)\nSharing the host’s network namespace permits processes in the pod to communicate with processes bound to the host’s loopback adapter.",
+                "markdown": "**Misconfiguration KSV-0009**\n| Type | Severity | Check | Message | Link |\n| --- | --- | --- | --- | --- |\n|Kubernetes Security Check|HIGH|Access to host network|DaemonSet 'monitoring-prometheus-node-exporter' should not set 'spec.template.spec.hostNetwork' to true|[KSV-0009](https://avd.aquasec.com/misconfig/ksv-0009)|\n\nSharing the host’s network namespace permits processes in the pod to communicate with processes bound to the host’s loopback adapter."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "8.0",
+                "tags": [
+                  "misconfiguration",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "KSV-0010",
+              "name": "Misconfiguration",
+              "shortDescription": {
+                "text": "Access to host PID"
+              },
+              "fullDescription": {
+                "text": "Sharing the host’s PID namespace allows visibility on host processes, potentially leaking information such as environment variables and configuration."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/misconfig/ksv-0010",
+              "help": {
+                "text": "Misconfiguration KSV-0010\nType: Kubernetes Security Check\nSeverity: HIGH\nCheck: Access to host PID\nMessage: DaemonSet 'monitoring-prometheus-node-exporter' should not set 'spec.template.spec.hostPID' to true\nLink: [KSV-0010](https://avd.aquasec.com/misconfig/ksv-0010)\nSharing the host’s PID namespace allows visibility on host processes, potentially leaking information such as environment variables and configuration.",
+                "markdown": "**Misconfiguration KSV-0010**\n| Type | Severity | Check | Message | Link |\n| --- | --- | --- | --- | --- |\n|Kubernetes Security Check|HIGH|Access to host PID|DaemonSet 'monitoring-prometheus-node-exporter' should not set 'spec.template.spec.hostPID' to true|[KSV-0010](https://avd.aquasec.com/misconfig/ksv-0010)|\n\nSharing the host’s PID namespace allows visibility on host processes, potentially leaking information such as environment variables and configuration."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "8.0",
+                "tags": [
+                  "misconfiguration",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "KSV-0041",
+              "name": "Misconfiguration",
+              "shortDescription": {
+                "text": "Manage secrets"
+              },
+              "fullDescription": {
+                "text": "Viewing secrets at the cluster-scope is akin to cluster-admin in most clusters as there are typically at least one service accounts (their token stored in a secret) bound to cluster-admin directly or a role/clusterrole that gives similar permissions."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/misconfig/ksv-0041",
+              "help": {
+                "text": "Misconfiguration KSV-0041\nType: Kubernetes Security Check\nSeverity: CRITICAL\nCheck: Manage secrets\nMessage: ClusterRole 'monitoring-kube-state-metrics' shouldn't have access to manage resource 'secrets'\nLink: [KSV-0041](https://avd.aquasec.com/misconfig/ksv-0041)\nViewing secrets at the cluster-scope is akin to cluster-admin in most clusters as there are typically at least one service accounts (their token stored in a secret) bound to cluster-admin directly or a role/clusterrole that gives similar permissions.",
+                "markdown": "**Misconfiguration KSV-0041**\n| Type | Severity | Check | Message | Link |\n| --- | --- | --- | --- | --- |\n|Kubernetes Security Check|CRITICAL|Manage secrets|ClusterRole 'monitoring-kube-state-metrics' shouldn't have access to manage resource 'secrets'|[KSV-0041](https://avd.aquasec.com/misconfig/ksv-0041)|\n\nViewing secrets at the cluster-scope is akin to cluster-admin in most clusters as there are typically at least one service accounts (their token stored in a secret) bound to cluster-admin directly or a role/clusterrole that gives similar permissions."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "9.5",
+                "tags": [
+                  "misconfiguration",
+                  "security",
+                  "CRITICAL"
+                ]
+              }
+            },
+            {
+              "id": "KSV-0045",
+              "name": "Misconfiguration",
+              "shortDescription": {
+                "text": "No wildcard verb roles"
+              },
+              "fullDescription": {
+                "text": "Check whether role permits wildcard verb on specific resources"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/misconfig/ksv-0045",
+              "help": {
+                "text": "Misconfiguration KSV-0045\nType: Kubernetes Security Check\nSeverity: CRITICAL\nCheck: No wildcard verb roles\nMessage: Role permits wildcard verb on specific resources\nLink: [KSV-0045](https://avd.aquasec.com/misconfig/ksv-0045)\nCheck whether role permits wildcard verb on specific resources",
+                "markdown": "**Misconfiguration KSV-0045**\n| Type | Severity | Check | Message | Link |\n| --- | --- | --- | --- | --- |\n|Kubernetes Security Check|CRITICAL|No wildcard verb roles|Role permits wildcard verb on specific resources|[KSV-0045](https://avd.aquasec.com/misconfig/ksv-0045)|\n\nCheck whether role permits wildcard verb on specific resources"
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "9.5",
+                "tags": [
+                  "misconfiguration",
+                  "security",
+                  "CRITICAL"
+                ]
+              }
+            },
+            {
+              "id": "KSV-0056",
+              "name": "Misconfiguration",
+              "shortDescription": {
+                "text": "Manage Kubernetes networking"
+              },
+              "fullDescription": {
+                "text": "The ability to control which pods get service traffic directed to them allows for interception attacks. Controlling network policy allows for bypassing lateral movement restrictions."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/misconfig/ksv-0056",
+              "help": {
+                "text": "Misconfiguration KSV-0056\nType: Kubernetes Security Check\nSeverity: HIGH\nCheck: Manage Kubernetes networking\nMessage: ClusterRole 'monitoring-kube-prometheus-operator' should not have access to resources [\"services\", \"endpoints\", \"endpointslices\", \"networkpolicies\", \"ingresses\"] for verbs [\"create\", \"update\", \"patch\", \"delete\", \"deletecollection\", \"impersonate\", \"*\"]\nLink: [KSV-0056](https://avd.aquasec.com/misconfig/ksv-0056)\nThe ability to control which pods get service traffic directed to them allows for interception attacks. Controlling network policy allows for bypassing lateral movement restrictions.",
+                "markdown": "**Misconfiguration KSV-0056**\n| Type | Severity | Check | Message | Link |\n| --- | --- | --- | --- | --- |\n|Kubernetes Security Check|HIGH|Manage Kubernetes networking|ClusterRole 'monitoring-kube-prometheus-operator' should not have access to resources [\"services\", \"endpoints\", \"endpointslices\", \"networkpolicies\", \"ingresses\"] for verbs [\"create\", \"update\", \"patch\", \"delete\", \"deletecollection\", \"impersonate\", \"*\"]|[KSV-0056](https://avd.aquasec.com/misconfig/ksv-0056)|\n\nThe ability to control which pods get service traffic directed to them allows for interception attacks. Controlling network policy allows for bypassing lateral movement restrictions."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "8.0",
+                "tags": [
+                  "misconfiguration",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "KSV-0114",
+              "name": "Misconfiguration",
+              "shortDescription": {
+                "text": "Manage webhookconfigurations"
+              },
+              "fullDescription": {
+                "text": "Webhooks can silently intercept or actively mutate/block resources as they are being created or updated. This includes secrets and pod specs."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/misconfig/ksv-0114",
+              "help": {
+                "text": "Misconfiguration KSV-0114\nType: Kubernetes Security Check\nSeverity: CRITICAL\nCheck: Manage webhookconfigurations\nMessage: ClusterRole 'monitoring-kube-prometheus-admission' should not have access to resources [\"mutatingwebhookconfigurations\", \"validatingwebhookconfigurations\"] for verbs [\"create\", \"update\", \"patch\", \"delete\", \"deletecollection\", \"impersonate\", \"*\"]\nLink: [KSV-0114](https://avd.aquasec.com/misconfig/ksv-0114)\nWebhooks can silently intercept or actively mutate/block resources as they are being created or updated. This includes secrets and pod specs.",
+                "markdown": "**Misconfiguration KSV-0114**\n| Type | Severity | Check | Message | Link |\n| --- | --- | --- | --- | --- |\n|Kubernetes Security Check|CRITICAL|Manage webhookconfigurations|ClusterRole 'monitoring-kube-prometheus-admission' should not have access to resources [\"mutatingwebhookconfigurations\", \"validatingwebhookconfigurations\"] for verbs [\"create\", \"update\", \"patch\", \"delete\", \"deletecollection\", \"impersonate\", \"*\"]|[KSV-0114](https://avd.aquasec.com/misconfig/ksv-0114)|\n\nWebhooks can silently intercept or actively mutate/block resources as they are being created or updated. This includes secrets and pod specs."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "9.5",
+                "tags": [
+                  "misconfiguration",
+                  "security",
+                  "CRITICAL"
+                ]
+              }
+            },
+            {
+              "id": "KSV-0121",
+              "name": "Misconfiguration",
+              "shortDescription": {
+                "text": "Kubernetes resource with disallowed volumes mounted"
+              },
+              "fullDescription": {
+                "text": "HostPath present many security risks and as a security practice it is better to avoid critical host paths mounts."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/misconfig/ksv-0121",
+              "help": {
+                "text": "Misconfiguration KSV-0121\nType: Kubernetes Security Check\nSeverity: HIGH\nCheck: Kubernetes resource with disallowed volumes mounted\nMessage: daemonset monitoring-prometheus-node-exporter in monitoring namespace shouldn't have volumes set to {\"/\", \"/proc\", \"/sys\"}\nLink: [KSV-0121](https://avd.aquasec.com/misconfig/ksv-0121)\nHostPath present many security risks and as a security practice it is better to avoid critical host paths mounts.",
+                "markdown": "**Misconfiguration KSV-0121**\n| Type | Severity | Check | Message | Link |\n| --- | --- | --- | --- | --- |\n|Kubernetes Security Check|HIGH|Kubernetes resource with disallowed volumes mounted|daemonset monitoring-prometheus-node-exporter in monitoring namespace shouldn't have volumes set to {\"/\", \"/proc\", \"/sys\"}|[KSV-0121](https://avd.aquasec.com/misconfig/ksv-0121)|\n\nHostPath present many security risks and as a security practice it is better to avoid critical host paths mounts."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "8.0",
+                "tags": [
+                  "misconfiguration",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            }
+          ],
+          "version": "0.70.0"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "DS-0002",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Artifact: ai-dashboard/Dockerfile\nType: dockerfile\nVulnerability DS-0002\nSeverity: HIGH\nMessage: Specify at least 1 USER command in Dockerfile with non-root user as argument\nLink: [DS-0002](https://avd.aquasec.com/misconfig/ds-0002)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "ai-dashboard/Dockerfile",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "ai-dashboard/Dockerfile"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: deploy/helm/flight-delay/templates/analytics-deployment.yaml\nType: helm\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'analytics' of Deployment 'flight-delay-analytics' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/helm/flight-delay/templates/analytics-deployment.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 34,
+                  "startColumn": 1,
+                  "endLine": 81,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "deploy/helm/flight-delay/templates/analytics-deployment.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: deploy/helm/flight-delay/templates/analytics-deployment.yaml\nType: helm\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: container flight-delay-analytics in default namespace is using the default security context\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/helm/flight-delay/templates/analytics-deployment.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 34,
+                  "startColumn": 1,
+                  "endLine": 81,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "deploy/helm/flight-delay/templates/analytics-deployment.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: deploy/helm/flight-delay/templates/analytics-deployment.yaml\nType: helm\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: deployment flight-delay-analytics in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/helm/flight-delay/templates/analytics-deployment.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 29,
+                  "startColumn": 1,
+                  "endLine": 81,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "deploy/helm/flight-delay/templates/analytics-deployment.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: deploy/helm/flight-delay/templates/backend-deployment.yaml\nType: helm\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'backend' of Deployment 'flight-delay-backend' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/helm/flight-delay/templates/backend-deployment.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 37,
+                  "startColumn": 1,
+                  "endLine": 85,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "deploy/helm/flight-delay/templates/backend-deployment.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: deploy/helm/flight-delay/templates/backend-deployment.yaml\nType: helm\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: container flight-delay-backend in default namespace is using the default security context\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/helm/flight-delay/templates/backend-deployment.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 37,
+                  "startColumn": 1,
+                  "endLine": 85,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "deploy/helm/flight-delay/templates/backend-deployment.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: deploy/helm/flight-delay/templates/backend-deployment.yaml\nType: helm\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: deployment flight-delay-backend in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/helm/flight-delay/templates/backend-deployment.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 32,
+                  "startColumn": 1,
+                  "endLine": 90,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "deploy/helm/flight-delay/templates/backend-deployment.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: deploy/helm/flight-delay/templates/frontend-deployment.yaml\nType: helm\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'frontend' of Deployment 'flight-delay-frontend' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/helm/flight-delay/templates/frontend-deployment.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 34,
+                  "startColumn": 1,
+                  "endLine": 73,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "deploy/helm/flight-delay/templates/frontend-deployment.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: deploy/helm/flight-delay/templates/frontend-deployment.yaml\nType: helm\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: container flight-delay-frontend in default namespace is using the default security context\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/helm/flight-delay/templates/frontend-deployment.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 34,
+                  "startColumn": 1,
+                  "endLine": 73,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "deploy/helm/flight-delay/templates/frontend-deployment.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: deploy/helm/flight-delay/templates/frontend-deployment.yaml\nType: helm\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: deployment flight-delay-frontend in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/helm/flight-delay/templates/frontend-deployment.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 29,
+                  "startColumn": 1,
+                  "endLine": 73,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "deploy/helm/flight-delay/templates/frontend-deployment.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: deploy/helm/flight-delay/templates/redis-deployment.yaml\nType: helm\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'redis' of Deployment 'flight-delay-redis' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/helm/flight-delay/templates/redis-deployment.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 34,
+                  "startColumn": 1,
+                  "endLine": 85,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "deploy/helm/flight-delay/templates/redis-deployment.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: deploy/helm/flight-delay/templates/redis-deployment.yaml\nType: helm\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: container flight-delay-redis in default namespace is using the default security context\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/helm/flight-delay/templates/redis-deployment.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 34,
+                  "startColumn": 1,
+                  "endLine": 85,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "deploy/helm/flight-delay/templates/redis-deployment.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: deploy/helm/flight-delay/templates/redis-deployment.yaml\nType: helm\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: deployment flight-delay-redis in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/helm/flight-delay/templates/redis-deployment.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 32,
+                  "startColumn": 1,
+                  "endLine": 90,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "deploy/helm/flight-delay/templates/redis-deployment.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "DS-0002",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Artifact: frontend/Dockerfile\nType: dockerfile\nVulnerability DS-0002\nSeverity: HIGH\nMessage: Specify at least 1 USER command in Dockerfile with non-root user as argument\nLink: [DS-0002](https://avd.aquasec.com/misconfig/ds-0002)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "frontend/Dockerfile",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "frontend/Dockerfile"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: k8s/manifests/analytics.yaml\nType: kubernetes\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'analytics' of Deployment 'analytics' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "k8s/manifests/analytics.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 28,
+                  "startColumn": 1,
+                  "endLine": 79,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "k8s/manifests/analytics.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: k8s/manifests/analytics.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: container analytics in default namespace is using the default security context\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "k8s/manifests/analytics.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 28,
+                  "startColumn": 1,
+                  "endLine": 79,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "k8s/manifests/analytics.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: k8s/manifests/analytics.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: deployment analytics in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "k8s/manifests/analytics.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 1,
+                  "endLine": 84,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "k8s/manifests/analytics.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: k8s/manifests/backend.yaml\nType: kubernetes\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'backend' of Deployment 'backend' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "k8s/manifests/backend.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 28,
+                  "startColumn": 1,
+                  "endLine": 79,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "k8s/manifests/backend.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: k8s/manifests/backend.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: container backend in default namespace is using the default security context\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "k8s/manifests/backend.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 28,
+                  "startColumn": 1,
+                  "endLine": 79,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "k8s/manifests/backend.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: k8s/manifests/backend.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: deployment backend in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "k8s/manifests/backend.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 1,
+                  "endLine": 84,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "k8s/manifests/backend.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: k8s/manifests/frontend.yaml\nType: kubernetes\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'frontend' of Deployment 'frontend' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "k8s/manifests/frontend.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 25,
+                  "startColumn": 1,
+                  "endLine": 64,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "k8s/manifests/frontend.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: k8s/manifests/frontend.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: container frontend in default namespace is using the default security context\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "k8s/manifests/frontend.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 25,
+                  "startColumn": 1,
+                  "endLine": 64,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "k8s/manifests/frontend.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: k8s/manifests/frontend.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: deployment frontend in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "k8s/manifests/frontend.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 1,
+                  "endLine": 64,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "k8s/manifests/frontend.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: k8s/manifests/redis.yaml\nType: kubernetes\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'redis' of Deployment 'redis' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "k8s/manifests/redis.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 23,
+                  "startColumn": 1,
+                  "endLine": 74,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "k8s/manifests/redis.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: k8s/manifests/redis.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: container redis in default namespace is using the default security context\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "k8s/manifests/redis.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 23,
+                  "startColumn": 1,
+                  "endLine": 74,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "k8s/manifests/redis.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: k8s/manifests/redis.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: deployment redis in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "k8s/manifests/redis.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 1,
+                  "endLine": 79,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "k8s/manifests/redis.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/flight-delay-dev.yaml\nType: kubernetes\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'analytics' of Deployment 'flight-delay-dev-analytics' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/flight-delay-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 201,
+                  "startColumn": 1,
+                  "endLine": 248,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/flight-delay-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/flight-delay-dev.yaml\nType: kubernetes\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'backend' of Deployment 'flight-delay-dev-backend' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/flight-delay-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 285,
+                  "startColumn": 1,
+                  "endLine": 333,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/flight-delay-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/flight-delay-dev.yaml\nType: kubernetes\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'frontend' of Deployment 'flight-delay-dev-frontend' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/flight-delay-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 372,
+                  "startColumn": 1,
+                  "endLine": 411,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/flight-delay-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/flight-delay-dev.yaml\nType: kubernetes\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'redis' of Deployment 'flight-delay-dev-redis' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/flight-delay-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 445,
+                  "startColumn": 1,
+                  "endLine": 496,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/flight-delay-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/flight-delay-dev.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: container flight-delay-dev-analytics in default namespace is using the default security context\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/flight-delay-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 201,
+                  "startColumn": 1,
+                  "endLine": 248,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/flight-delay-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/flight-delay-dev.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: container flight-delay-dev-backend in default namespace is using the default security context\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/flight-delay-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 285,
+                  "startColumn": 1,
+                  "endLine": 333,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/flight-delay-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/flight-delay-dev.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: container flight-delay-dev-frontend in default namespace is using the default security context\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/flight-delay-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 372,
+                  "startColumn": 1,
+                  "endLine": 411,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/flight-delay-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/flight-delay-dev.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: container flight-delay-dev-redis in default namespace is using the default security context\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/flight-delay-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 445,
+                  "startColumn": 1,
+                  "endLine": 496,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/flight-delay-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/flight-delay-dev.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: deployment flight-delay-dev-analytics in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/flight-delay-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 196,
+                  "startColumn": 1,
+                  "endLine": 248,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/flight-delay-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/flight-delay-dev.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: deployment flight-delay-dev-backend in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/flight-delay-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 280,
+                  "startColumn": 1,
+                  "endLine": 338,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/flight-delay-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/flight-delay-dev.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: deployment flight-delay-dev-frontend in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/flight-delay-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 367,
+                  "startColumn": 1,
+                  "endLine": 411,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/flight-delay-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0118",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/flight-delay-dev.yaml\nType: kubernetes\nVulnerability KSV-0118\nSeverity: HIGH\nMessage: deployment flight-delay-dev-redis in default namespace is using the default security context, which allows root privileges\nLink: [KSV-0118](https://avd.aquasec.com/misconfig/ksv-0118)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/flight-delay-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 443,
+                  "startColumn": 1,
+                  "endLine": 501,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/flight-delay-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0009",
+          "ruleIndex": 3,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0009\nSeverity: HIGH\nMessage: DaemonSet 'monitoring-prometheus-node-exporter' should not set 'spec.template.spec.hostNetwork' to true\nLink: [KSV-0009](https://avd.aquasec.com/misconfig/ksv-0009)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1539,
+                  "startColumn": 1,
+                  "endLine": 1655,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0010",
+          "ruleIndex": 4,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0010\nSeverity: HIGH\nMessage: DaemonSet 'monitoring-prometheus-node-exporter' should not set 'spec.template.spec.hostPID' to true\nLink: [KSV-0010](https://avd.aquasec.com/misconfig/ksv-0010)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1539,
+                  "startColumn": 1,
+                  "endLine": 1655,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'grafana' of Deployment 'monitoring-grafana' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1779,
+                  "startColumn": 1,
+                  "endLine": 1853,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'grafana-sc-dashboard' of Deployment 'monitoring-grafana' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1701,
+                  "startColumn": 1,
+                  "endLine": 1740,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0014",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0014\nSeverity: HIGH\nMessage: Container 'grafana-sc-datasources' of Deployment 'monitoring-grafana' should set 'securityContext.readOnlyRootFilesystem' to true\nLink: [KSV-0014](https://avd.aquasec.com/misconfig/ksv-0014)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1741,
+                  "startColumn": 1,
+                  "endLine": 1778,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0041",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0041\nSeverity: CRITICAL\nMessage: ClusterRole 'monitoring-grafana-clusterrole' shouldn't have access to manage resource 'secrets'\nLink: [KSV-0041](https://avd.aquasec.com/misconfig/ksv-0041)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 827,
+                  "startColumn": 1,
+                  "endLine": 829,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0041",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0041\nSeverity: CRITICAL\nMessage: ClusterRole 'monitoring-kube-prometheus-operator' shouldn't have access to manage resource 'secrets'\nLink: [KSV-0041](https://avd.aquasec.com/misconfig/ksv-0041)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1040,
+                  "startColumn": 1,
+                  "endLine": 1046,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0041",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0041\nSeverity: CRITICAL\nMessage: ClusterRole 'monitoring-kube-state-metrics' shouldn't have access to manage resource 'secrets'\nLink: [KSV-0041](https://avd.aquasec.com/misconfig/ksv-0041)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 957,
+                  "startColumn": 1,
+                  "endLine": 960,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0045",
+          "ruleIndex": 6,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0045\nSeverity: CRITICAL\nMessage: Role permits wildcard verb on specific resources\nLink: [KSV-0045](https://avd.aquasec.com/misconfig/ksv-0045)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1034,
+                  "startColumn": 1,
+                  "endLine": 1039,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0045",
+          "ruleIndex": 6,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0045\nSeverity: CRITICAL\nMessage: Role permits wildcard verb on specific resources\nLink: [KSV-0045](https://avd.aquasec.com/misconfig/ksv-0045)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1040,
+                  "startColumn": 1,
+                  "endLine": 1046,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0056",
+          "ruleIndex": 7,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0056\nSeverity: HIGH\nMessage: ClusterRole 'monitoring-kube-prometheus-operator' should not have access to resources [\"services\", \"endpoints\", \"endpointslices\", \"networkpolicies\", \"ingresses\"] for verbs [\"create\", \"update\", \"patch\", \"delete\", \"deletecollection\", \"impersonate\", \"*\"]\nLink: [KSV-0056](https://avd.aquasec.com/misconfig/ksv-0056)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1102,
+                  "startColumn": 1,
+                  "endLine": 1112,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0056",
+          "ruleIndex": 7,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0056\nSeverity: HIGH\nMessage: ClusterRole 'monitoring-kube-prometheus-operator' should not have access to resources [\"services\", \"endpoints\", \"endpointslices\", \"networkpolicies\", \"ingresses\"] for verbs [\"create\", \"update\", \"patch\", \"delete\", \"deletecollection\", \"impersonate\", \"*\"]\nLink: [KSV-0056](https://avd.aquasec.com/misconfig/ksv-0056)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1054,
+                  "startColumn": 1,
+                  "endLine": 1064,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0114",
+          "ruleIndex": 8,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0114\nSeverity: CRITICAL\nMessage: ClusterRole 'monitoring-kube-prometheus-admission' should not have access to resources [\"mutatingwebhookconfigurations\", \"validatingwebhookconfigurations\"] for verbs [\"create\", \"update\", \"patch\", \"delete\", \"deletecollection\", \"impersonate\", \"*\"]\nLink: [KSV-0114](https://avd.aquasec.com/misconfig/ksv-0114)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 6303,
+                  "startColumn": 1,
+                  "endLine": 6311,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "KSV-0121",
+          "ruleIndex": 9,
+          "level": "error",
+          "message": {
+            "text": "Artifact: rendered/monitoring-dev.yaml\nType: kubernetes\nVulnerability KSV-0121\nSeverity: HIGH\nMessage: daemonset monitoring-prometheus-node-exporter in monitoring namespace shouldn't have volumes set to {\"/\", \"/proc\", \"/sys\"}\nLink: [KSV-0121](https://avd.aquasec.com/misconfig/ksv-0121)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rendered/monitoring-dev.yaml",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1539,
+                  "startColumn": 1,
+                  "endLine": 1655,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "rendered/monitoring-dev.yaml"
+              }
+            }
+          ]
+        }
+      ],
+      "columnKind": "utf16CodeUnits",
+      "originalUriBaseIds": {
+        "ROOTPATH": {
+          "uri": "file:///workspace/"
+        }
+      }
+    }
+  ]
+}

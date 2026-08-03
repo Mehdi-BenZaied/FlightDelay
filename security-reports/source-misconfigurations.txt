@@ -1,0 +1,1190 @@
+2026-08-03T10:14:39Z	INFO	[misconfig] Misconfiguration scanning is enabled
+2026-08-03T10:14:39Z	INFO	[checks-client] Using existing checks from cache	path="/root/.cache/trivy/policy/content"
+2026-08-03T10:14:40Z	WARN	[pip] Unable to find python `site-packages` directory. License detection is skipped.	err="unable to find path to Python executable"
+2026-08-03T10:14:43Z	INFO	[npm] To collect the license information of packages, "npm install" needs to be performed beforehand	dir="ai-dashboard/node_modules"
+2026-08-03T10:14:43Z	INFO	[npm] To collect the license information of packages, "npm install" needs to be performed beforehand	dir="frontend/node_modules"
+2026-08-03T10:14:43Z	INFO	Suppressing dependencies for development and testing. To display them, try the '--include-dev-deps' flag.
+2026-08-03T10:14:43Z	INFO	Number of language-specific files	num=2
+2026-08-03T10:14:43Z	INFO	Detected config files	num=24
+
+Report Summary
+
+┌──────────────────────────────────────────────────────────────┬────────────┬───────────────────┐
+│                            Target                            │    Type    │ Misconfigurations │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ ai-dashboard/package-lock.json                               │    npm     │         -         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ frontend/package-lock.json                                   │    npm     │         -         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ ai-dashboard/Dockerfile                                      │ dockerfile │         1         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ ai-dashboard/integrations/Dockerfile.collector               │ dockerfile │         0         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ backend/Dockerfile                                           │ dockerfile │         0         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ deploy/helm/flight-delay/templates/analytics-deployment.yaml │    helm    │         3         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ deploy/helm/flight-delay/templates/analytics-service.yaml    │    helm    │         0         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ deploy/helm/flight-delay/templates/backend-deployment.yaml   │    helm    │         3         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ deploy/helm/flight-delay/templates/backend-service.yaml      │    helm    │         0         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ deploy/helm/flight-delay/templates/configmap.yaml            │    helm    │         0         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ deploy/helm/flight-delay/templates/frontend-deployment.yaml  │    helm    │         3         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ deploy/helm/flight-delay/templates/frontend-service.yaml     │    helm    │         0         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ deploy/helm/flight-delay/templates/redis-deployment.yaml     │    helm    │         3         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ deploy/helm/flight-delay/templates/redis-service.yaml        │    helm    │         0         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ deploy/helm/flight-delay/templates/storage.yaml              │    helm    │         0         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ frontend/Dockerfile                                          │ dockerfile │         1         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ k8s/manifests/analytics.yaml                                 │ kubernetes │         3         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ k8s/manifests/backend.yaml                                   │ kubernetes │         3         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ k8s/manifests/configmap.yaml                                 │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ k8s/manifests/frontend.yaml                                  │ kubernetes │         3         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ k8s/manifests/namespace.yaml                                 │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ k8s/manifests/redis.yaml                                     │ kubernetes │         3         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ k8s/manifests/serviceaccount.yaml                            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ k8s/manifests/storage.yaml                                   │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ rendered/flight-delay-dev.yaml                               │ kubernetes │        12         │
+├──────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ rendered/monitoring-dev.yaml                                 │ kubernetes │        14         │
+└──────────────────────────────────────────────────────────────┴────────────┴───────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+
+ai-dashboard/Dockerfile (dockerfile)
+====================================
+Tests: 20 (SUCCESSES: 19, FAILURES: 1)
+Failures: 1 (HIGH: 1, CRITICAL: 0)
+
+DS-0002 (HIGH): Specify at least 1 USER command in Dockerfile with non-root user as argument
+════════════════════════════════════════
+Running containers with 'root' user can lead to a container escape situation. It is a best practice to run containers as non-root users, which can be done by adding a 'USER' statement to the Dockerfile.
+
+See https://avd.aquasec.com/misconfig/ds-0002
+────────────────────────────────────────
+
+
+
+deploy/helm/flight-delay/templates/analytics-deployment.yaml (helm)
+===================================================================
+Tests: 23 (SUCCESSES: 20, FAILURES: 3)
+Failures: 3 (HIGH: 3, CRITICAL: 0)
+
+KSV-0014 (HIGH): Container 'analytics' of Deployment 'flight-delay-analytics' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ deploy/helm/flight-delay/templates/analytics-deployment.yaml:34-81
+────────────────────────────────────────
+  34 ┌         - name: analytics
+  35 │           image: "mehdibenzaied/flight-delay-backend:main-latest"
+  36 │           imagePullPolicy: Always
+  37 │           command:
+  38 │             - python
+  39 │             - analytics.py
+  40 │ 
+  41 │           ports:
+  42 └             - name: http
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): container flight-delay-analytics in default namespace is using the default security context
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ deploy/helm/flight-delay/templates/analytics-deployment.yaml:34-81
+────────────────────────────────────────
+  34 ┌         - name: analytics
+  35 │           image: "mehdibenzaied/flight-delay-backend:main-latest"
+  36 │           imagePullPolicy: Always
+  37 │           command:
+  38 │             - python
+  39 │             - analytics.py
+  40 │ 
+  41 │           ports:
+  42 └             - name: http
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): deployment flight-delay-analytics in default namespace is using the default security context, which allows root privileges
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ deploy/helm/flight-delay/templates/analytics-deployment.yaml:29-81
+────────────────────────────────────────
+  29 ┌     spec:
+  30 │       imagePullSecrets:
+  31 │         - name: dockerhub-credentials
+  32 │ 
+  33 │       containers:
+  34 │         - name: analytics
+  35 │           image: "mehdibenzaied/flight-delay-backend:main-latest"
+  36 │           imagePullPolicy: Always
+  37 └           command:
+  ..   
+────────────────────────────────────────
+
+
+
+deploy/helm/flight-delay/templates/backend-deployment.yaml (helm)
+=================================================================
+Tests: 23 (SUCCESSES: 20, FAILURES: 3)
+Failures: 3 (HIGH: 3, CRITICAL: 0)
+
+KSV-0014 (HIGH): Container 'backend' of Deployment 'flight-delay-backend' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ deploy/helm/flight-delay/templates/backend-deployment.yaml:37-85
+────────────────────────────────────────
+  37 ┌         - name: backend
+  38 │           image: "mehdibenzaied/flight-delay-backend:main-latest"
+  39 │           imagePullPolicy: Always
+  40 │ 
+  41 │           ports:
+  42 │             - name: http
+  43 │               containerPort: 5000
+  44 │               protocol: TCP
+  45 └ 
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): container flight-delay-backend in default namespace is using the default security context
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ deploy/helm/flight-delay/templates/backend-deployment.yaml:37-85
+────────────────────────────────────────
+  37 ┌         - name: backend
+  38 │           image: "mehdibenzaied/flight-delay-backend:main-latest"
+  39 │           imagePullPolicy: Always
+  40 │ 
+  41 │           ports:
+  42 │             - name: http
+  43 │               containerPort: 5000
+  44 │               protocol: TCP
+  45 └ 
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): deployment flight-delay-backend in default namespace is using the default security context, which allows root privileges
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ deploy/helm/flight-delay/templates/backend-deployment.yaml:32-90
+────────────────────────────────────────
+  32 ┌     spec:
+  33 │       imagePullSecrets:
+  34 │         - name: dockerhub-credentials
+  35 │ 
+  36 │       containers:
+  37 │         - name: backend
+  38 │           image: "mehdibenzaied/flight-delay-backend:main-latest"
+  39 │           imagePullPolicy: Always
+  40 └ 
+  ..   
+────────────────────────────────────────
+
+
+
+deploy/helm/flight-delay/templates/frontend-deployment.yaml (helm)
+==================================================================
+Tests: 23 (SUCCESSES: 20, FAILURES: 3)
+Failures: 3 (HIGH: 3, CRITICAL: 0)
+
+KSV-0014 (HIGH): Container 'frontend' of Deployment 'flight-delay-frontend' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ deploy/helm/flight-delay/templates/frontend-deployment.yaml:34-73
+────────────────────────────────────────
+  34 ┌         - name: frontend
+  35 │           image: "mehdibenzaied/flight-delay-frontend:main-latest"
+  36 │           imagePullPolicy: Always
+  37 │ 
+  38 │           ports:
+  39 │             - name: http
+  40 │               containerPort: 80
+  41 │               protocol: TCP
+  42 └ 
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): container flight-delay-frontend in default namespace is using the default security context
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ deploy/helm/flight-delay/templates/frontend-deployment.yaml:34-73
+────────────────────────────────────────
+  34 ┌         - name: frontend
+  35 │           image: "mehdibenzaied/flight-delay-frontend:main-latest"
+  36 │           imagePullPolicy: Always
+  37 │ 
+  38 │           ports:
+  39 │             - name: http
+  40 │               containerPort: 80
+  41 │               protocol: TCP
+  42 └ 
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): deployment flight-delay-frontend in default namespace is using the default security context, which allows root privileges
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ deploy/helm/flight-delay/templates/frontend-deployment.yaml:29-73
+────────────────────────────────────────
+  29 ┌     spec:
+  30 │       imagePullSecrets:
+  31 │         - name: dockerhub-credentials
+  32 │ 
+  33 │       containers:
+  34 │         - name: frontend
+  35 │           image: "mehdibenzaied/flight-delay-frontend:main-latest"
+  36 │           imagePullPolicy: Always
+  37 └ 
+  ..   
+────────────────────────────────────────
+
+
+
+deploy/helm/flight-delay/templates/redis-deployment.yaml (helm)
+===============================================================
+Tests: 23 (SUCCESSES: 20, FAILURES: 3)
+Failures: 3 (HIGH: 3, CRITICAL: 0)
+
+KSV-0014 (HIGH): Container 'redis' of Deployment 'flight-delay-redis' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ deploy/helm/flight-delay/templates/redis-deployment.yaml:34-85
+────────────────────────────────────────
+  34 ┌         - name: redis
+  35 │           image: "redis:7-alpine"
+  36 │           imagePullPolicy: IfNotPresent
+  37 │ 
+  38 │           args:
+  39 │             - redis-server
+  40 │             - --appendonly
+  41 │             - "yes"
+  42 └ 
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): container flight-delay-redis in default namespace is using the default security context
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ deploy/helm/flight-delay/templates/redis-deployment.yaml:34-85
+────────────────────────────────────────
+  34 ┌         - name: redis
+  35 │           image: "redis:7-alpine"
+  36 │           imagePullPolicy: IfNotPresent
+  37 │ 
+  38 │           args:
+  39 │             - redis-server
+  40 │             - --appendonly
+  41 │             - "yes"
+  42 └ 
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): deployment flight-delay-redis in default namespace is using the default security context, which allows root privileges
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ deploy/helm/flight-delay/templates/redis-deployment.yaml:32-90
+────────────────────────────────────────
+  32 ┌     spec:
+  33 │       containers:
+  34 │         - name: redis
+  35 │           image: "redis:7-alpine"
+  36 │           imagePullPolicy: IfNotPresent
+  37 │ 
+  38 │           args:
+  39 │             - redis-server
+  40 └             - --appendonly
+  ..   
+────────────────────────────────────────
+
+
+
+frontend/Dockerfile (dockerfile)
+================================
+Tests: 20 (SUCCESSES: 19, FAILURES: 1)
+Failures: 1 (HIGH: 1, CRITICAL: 0)
+
+DS-0002 (HIGH): Specify at least 1 USER command in Dockerfile with non-root user as argument
+════════════════════════════════════════
+Running containers with 'root' user can lead to a container escape situation. It is a best practice to run containers as non-root users, which can be done by adding a 'USER' statement to the Dockerfile.
+
+See https://avd.aquasec.com/misconfig/ds-0002
+────────────────────────────────────────
+
+
+
+k8s/manifests/analytics.yaml (kubernetes)
+=========================================
+Tests: 38 (SUCCESSES: 35, FAILURES: 3)
+Failures: 3 (HIGH: 3, CRITICAL: 0)
+
+KSV-0014 (HIGH): Container 'analytics' of Deployment 'analytics' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ k8s/manifests/analytics.yaml:28-79
+────────────────────────────────────────
+  28 ┌         - name: analytics
+  29 │           image: mehdibenzaied/flight-delay-backend
+  30 │           imagePullPolicy: IfNotPresent
+  31 │ 
+  32 │           command:
+  33 │             - python
+  34 │             - analytics.py
+  35 │ 
+  36 └           ports:
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): container analytics in default namespace is using the default security context
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ k8s/manifests/analytics.yaml:28-79
+────────────────────────────────────────
+  28 ┌         - name: analytics
+  29 │           image: mehdibenzaied/flight-delay-backend
+  30 │           imagePullPolicy: IfNotPresent
+  31 │ 
+  32 │           command:
+  33 │             - python
+  34 │             - analytics.py
+  35 │ 
+  36 └           ports:
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): deployment analytics in default namespace is using the default security context, which allows root privileges
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ k8s/manifests/analytics.yaml:24-84
+────────────────────────────────────────
+  24 ┌     spec:
+  25 │       serviceAccountName: flight-delay
+  26 │ 
+  27 │       containers:
+  28 │         - name: analytics
+  29 │           image: mehdibenzaied/flight-delay-backend
+  30 │           imagePullPolicy: IfNotPresent
+  31 │ 
+  32 └           command:
+  ..   
+────────────────────────────────────────
+
+
+
+k8s/manifests/backend.yaml (kubernetes)
+=======================================
+Tests: 38 (SUCCESSES: 35, FAILURES: 3)
+Failures: 3 (HIGH: 3, CRITICAL: 0)
+
+KSV-0014 (HIGH): Container 'backend' of Deployment 'backend' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ k8s/manifests/backend.yaml:28-79
+────────────────────────────────────────
+  28 ┌         - name: backend
+  29 │           image: mehdibenzaied/flight-delay-backend
+  30 │           imagePullPolicy: IfNotPresent
+  31 │ 
+  32 │           command:
+  33 │             - python
+  34 │             - run.py
+  35 │ 
+  36 └           ports:
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): container backend in default namespace is using the default security context
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ k8s/manifests/backend.yaml:28-79
+────────────────────────────────────────
+  28 ┌         - name: backend
+  29 │           image: mehdibenzaied/flight-delay-backend
+  30 │           imagePullPolicy: IfNotPresent
+  31 │ 
+  32 │           command:
+  33 │             - python
+  34 │             - run.py
+  35 │ 
+  36 └           ports:
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): deployment backend in default namespace is using the default security context, which allows root privileges
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ k8s/manifests/backend.yaml:24-84
+────────────────────────────────────────
+  24 ┌     spec:
+  25 │       serviceAccountName: flight-delay
+  26 │ 
+  27 │       containers:
+  28 │         - name: backend
+  29 │           image: mehdibenzaied/flight-delay-backend
+  30 │           imagePullPolicy: IfNotPresent
+  31 │ 
+  32 └           command:
+  ..   
+────────────────────────────────────────
+
+
+
+k8s/manifests/frontend.yaml (kubernetes)
+========================================
+Tests: 38 (SUCCESSES: 35, FAILURES: 3)
+Failures: 3 (HIGH: 3, CRITICAL: 0)
+
+KSV-0014 (HIGH): Container 'frontend' of Deployment 'frontend' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ k8s/manifests/frontend.yaml:25-64
+────────────────────────────────────────
+  25 ┌         - name: frontend
+  26 │           image: mehdibenzaied/flight-delay-frontend
+  27 │           imagePullPolicy: IfNotPresent
+  28 │ 
+  29 │           ports:
+  30 │             - name: http
+  31 │               containerPort: 80
+  32 │               protocol: TCP
+  33 └ 
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): container frontend in default namespace is using the default security context
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ k8s/manifests/frontend.yaml:25-64
+────────────────────────────────────────
+  25 ┌         - name: frontend
+  26 │           image: mehdibenzaied/flight-delay-frontend
+  27 │           imagePullPolicy: IfNotPresent
+  28 │ 
+  29 │           ports:
+  30 │             - name: http
+  31 │               containerPort: 80
+  32 │               protocol: TCP
+  33 └ 
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): deployment frontend in default namespace is using the default security context, which allows root privileges
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ k8s/manifests/frontend.yaml:21-64
+────────────────────────────────────────
+  21 ┌     spec:
+  22 │       serviceAccountName: flight-delay
+  23 │ 
+  24 │       containers:
+  25 │         - name: frontend
+  26 │           image: mehdibenzaied/flight-delay-frontend
+  27 │           imagePullPolicy: IfNotPresent
+  28 │ 
+  29 └           ports:
+  ..   
+────────────────────────────────────────
+
+
+
+k8s/manifests/redis.yaml (kubernetes)
+=====================================
+Tests: 38 (SUCCESSES: 35, FAILURES: 3)
+Failures: 3 (HIGH: 3, CRITICAL: 0)
+
+KSV-0014 (HIGH): Container 'redis' of Deployment 'redis' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ k8s/manifests/redis.yaml:23-74
+────────────────────────────────────────
+  23 ┌         - name: redis
+  24 │           image: redis:7-alpine
+  25 │           imagePullPolicy: IfNotPresent
+  26 │ 
+  27 │           args:
+  28 │             - redis-server
+  29 │             - --appendonly
+  30 │             - "yes"
+  31 └ 
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): container redis in default namespace is using the default security context
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ k8s/manifests/redis.yaml:23-74
+────────────────────────────────────────
+  23 ┌         - name: redis
+  24 │           image: redis:7-alpine
+  25 │           imagePullPolicy: IfNotPresent
+  26 │ 
+  27 │           args:
+  28 │             - redis-server
+  29 │             - --appendonly
+  30 │             - "yes"
+  31 └ 
+  ..   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): deployment redis in default namespace is using the default security context, which allows root privileges
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ k8s/manifests/redis.yaml:21-79
+────────────────────────────────────────
+  21 ┌     spec:
+  22 │       containers:
+  23 │         - name: redis
+  24 │           image: redis:7-alpine
+  25 │           imagePullPolicy: IfNotPresent
+  26 │ 
+  27 │           args:
+  28 │             - redis-server
+  29 └             - --appendonly
+  ..   
+────────────────────────────────────────
+
+
+
+rendered/flight-delay-dev.yaml (kubernetes)
+===========================================
+Tests: 47 (SUCCESSES: 35, FAILURES: 12)
+Failures: 12 (HIGH: 12, CRITICAL: 0)
+
+KSV-0014 (HIGH): Container 'analytics' of Deployment 'flight-delay-dev-analytics' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ rendered/flight-delay-dev.yaml:201-248
+────────────────────────────────────────
+ 201 ┌         app.kubernetes.io/component: analytics
+ 202 │ 
+ 203 │     spec:
+ 204 │       imagePullSecrets:
+ 205 │         - name: dockerhub-credentials
+ 206 │ 
+ 207 │       containers:
+ 208 │         - name: analytics
+ 209 └           image: "mehdibenzaied/flight-delay-backend:main-latest"
+ ...   
+────────────────────────────────────────
+
+
+KSV-0014 (HIGH): Container 'backend' of Deployment 'flight-delay-dev-backend' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ rendered/flight-delay-dev.yaml:285-333
+────────────────────────────────────────
+ 285 ┌         app.kubernetes.io/instance: flight-delay-dev
+ 286 │         app.kubernetes.io/component: backend
+ 287 │ 
+ 288 │     spec:
+ 289 │       imagePullSecrets:
+ 290 │         - name: dockerhub-credentials
+ 291 │ 
+ 292 │       containers:
+ 293 └         - name: backend
+ ...   
+────────────────────────────────────────
+
+
+KSV-0014 (HIGH): Container 'frontend' of Deployment 'flight-delay-dev-frontend' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ rendered/flight-delay-dev.yaml:372-411
+────────────────────────────────────────
+ 372 ┌         app.kubernetes.io/name: flight-delay
+ 373 │         app.kubernetes.io/instance: flight-delay-dev
+ 374 │         app.kubernetes.io/component: frontend
+ 375 │ 
+ 376 │     spec:
+ 377 │       imagePullSecrets:
+ 378 │         - name: dockerhub-credentials
+ 379 │ 
+ 380 └       containers:
+ ...   
+────────────────────────────────────────
+
+
+KSV-0014 (HIGH): Container 'redis' of Deployment 'flight-delay-dev-redis' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ rendered/flight-delay-dev.yaml:445-496
+────────────────────────────────────────
+ 445 ┌ 
+ 446 │   template:
+ 447 │     metadata:
+ 448 │       labels:
+ 449 │         app.kubernetes.io/name: flight-delay
+ 450 │         app.kubernetes.io/instance: flight-delay-dev
+ 451 │         app.kubernetes.io/component: redis
+ 452 │ 
+ 453 └     spec:
+ ...   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): container flight-delay-dev-analytics in default namespace is using the default security context
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ rendered/flight-delay-dev.yaml:201-248
+────────────────────────────────────────
+ 201 ┌         app.kubernetes.io/component: analytics
+ 202 │ 
+ 203 │     spec:
+ 204 │       imagePullSecrets:
+ 205 │         - name: dockerhub-credentials
+ 206 │ 
+ 207 │       containers:
+ 208 │         - name: analytics
+ 209 └           image: "mehdibenzaied/flight-delay-backend:main-latest"
+ ...   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): container flight-delay-dev-backend in default namespace is using the default security context
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ rendered/flight-delay-dev.yaml:285-333
+────────────────────────────────────────
+ 285 ┌         app.kubernetes.io/instance: flight-delay-dev
+ 286 │         app.kubernetes.io/component: backend
+ 287 │ 
+ 288 │     spec:
+ 289 │       imagePullSecrets:
+ 290 │         - name: dockerhub-credentials
+ 291 │ 
+ 292 │       containers:
+ 293 └         - name: backend
+ ...   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): container flight-delay-dev-frontend in default namespace is using the default security context
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ rendered/flight-delay-dev.yaml:372-411
+────────────────────────────────────────
+ 372 ┌         app.kubernetes.io/name: flight-delay
+ 373 │         app.kubernetes.io/instance: flight-delay-dev
+ 374 │         app.kubernetes.io/component: frontend
+ 375 │ 
+ 376 │     spec:
+ 377 │       imagePullSecrets:
+ 378 │         - name: dockerhub-credentials
+ 379 │ 
+ 380 └       containers:
+ ...   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): container flight-delay-dev-redis in default namespace is using the default security context
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ rendered/flight-delay-dev.yaml:445-496
+────────────────────────────────────────
+ 445 ┌ 
+ 446 │   template:
+ 447 │     metadata:
+ 448 │       labels:
+ 449 │         app.kubernetes.io/name: flight-delay
+ 450 │         app.kubernetes.io/instance: flight-delay-dev
+ 451 │         app.kubernetes.io/component: redis
+ 452 │ 
+ 453 └     spec:
+ ...   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): deployment flight-delay-dev-analytics in default namespace is using the default security context, which allows root privileges
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ rendered/flight-delay-dev.yaml:196-248
+────────────────────────────────────────
+ 196 ┌   template:
+ 197 │     metadata:
+ 198 │       labels:
+ 199 │         app.kubernetes.io/name: flight-delay
+ 200 │         app.kubernetes.io/instance: flight-delay-dev
+ 201 │         app.kubernetes.io/component: analytics
+ 202 │ 
+ 203 │     spec:
+ 204 └       imagePullSecrets:
+ ...   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): deployment flight-delay-dev-backend in default namespace is using the default security context, which allows root privileges
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ rendered/flight-delay-dev.yaml:280-338
+────────────────────────────────────────
+ 280 ┌ 
+ 281 │   template:
+ 282 │     metadata:
+ 283 │       labels:
+ 284 │         app.kubernetes.io/name: flight-delay
+ 285 │         app.kubernetes.io/instance: flight-delay-dev
+ 286 │         app.kubernetes.io/component: backend
+ 287 │ 
+ 288 └     spec:
+ ...   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): deployment flight-delay-dev-frontend in default namespace is using the default security context, which allows root privileges
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ rendered/flight-delay-dev.yaml:367-411
+────────────────────────────────────────
+ 367 ┌       app.kubernetes.io/component: frontend
+ 368 │ 
+ 369 │   template:
+ 370 │     metadata:
+ 371 │       labels:
+ 372 │         app.kubernetes.io/name: flight-delay
+ 373 │         app.kubernetes.io/instance: flight-delay-dev
+ 374 │         app.kubernetes.io/component: frontend
+ 375 └ 
+ ...   
+────────────────────────────────────────
+
+
+KSV-0118 (HIGH): deployment flight-delay-dev-redis in default namespace is using the default security context, which allows root privileges
+════════════════════════════════════════
+Security context controls the allocation of security parameters for the pod/container/volume, ensuring the appropriate level of protection. Relying on default security context may expose vulnerabilities to potential attacks that rely on privileged access.
+
+See https://avd.aquasec.com/misconfig/ksv-0118
+────────────────────────────────────────
+ rendered/flight-delay-dev.yaml:443-501
+────────────────────────────────────────
+ 443 ┌       app.kubernetes.io/instance: flight-delay-dev
+ 444 │       app.kubernetes.io/component: redis
+ 445 │ 
+ 446 │   template:
+ 447 │     metadata:
+ 448 │       labels:
+ 449 │         app.kubernetes.io/name: flight-delay
+ 450 │         app.kubernetes.io/instance: flight-delay-dev
+ 451 └         app.kubernetes.io/component: redis
+ ...   
+────────────────────────────────────────
+
+
+
+rendered/monitoring-dev.yaml (kubernetes)
+=========================================
+Tests: 49 (SUCCESSES: 35, FAILURES: 14)
+Failures: 14 (HIGH: 8, CRITICAL: 6)
+
+KSV-0009 (HIGH): DaemonSet 'monitoring-prometheus-node-exporter' should not set 'spec.template.spec.hostNetwork' to true
+════════════════════════════════════════
+Sharing the host’s network namespace permits processes in the pod to communicate with processes bound to the host’s loopback adapter.
+
+See https://avd.aquasec.com/misconfig/ksv-0009
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:1539-1655
+────────────────────────────────────────
+1539 ┌   selector:
+1540 │     app: kube-prometheus-stack-operator
+1541 │     release: "monitoring"
+1542 │   type: "ClusterIP"
+1543 │ 
+1544 │ ---
+1545 │ # Source: kube-prometheus-stack/templates/prometheus/service.yaml
+1546 │ apiVersion: v1
+1547 └ kind: Service
+....   
+────────────────────────────────────────
+
+
+KSV-0010 (HIGH): DaemonSet 'monitoring-prometheus-node-exporter' should not set 'spec.template.spec.hostPID' to true
+════════════════════════════════════════
+Sharing the host’s PID namespace allows visibility on host processes, potentially leaking information such as environment variables and configuration.
+
+See https://avd.aquasec.com/misconfig/ksv-0010
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:1539-1655
+────────────────────────────────────────
+1539 ┌   selector:
+1540 │     app: kube-prometheus-stack-operator
+1541 │     release: "monitoring"
+1542 │   type: "ClusterIP"
+1543 │ 
+1544 │ ---
+1545 │ # Source: kube-prometheus-stack/templates/prometheus/service.yaml
+1546 │ apiVersion: v1
+1547 └ kind: Service
+....   
+────────────────────────────────────────
+
+
+KSV-0014 (HIGH): Container 'grafana' of Deployment 'monitoring-grafana' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:1779-1853
+────────────────────────────────────────
+1779 ┌               valueFrom:
+1780 │                 secretKeyRef:
+1781 │                   name: monitoring-grafana
+1782 │                   key: admin-password
+1783 │             - name: REQ_URL
+1784 │               value: http://localhost:3000/api/admin/provisioning/dashboards/reload
+1785 │             - name: REQ_METHOD
+1786 │               value: POST
+1787 └           securityContext:
+....   
+────────────────────────────────────────
+
+
+KSV-0014 (HIGH): Container 'grafana-sc-dashboard' of Deployment 'monitoring-grafana' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv-0014
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:1701-1740
+────────────────────────────────────────
+1701 ┌       volumes:
+1702 │         - name: proc
+1703 │           hostPath:
+1704 │             path: /proc
+1705 │         - name: sys
+1706 │           hostPath:
+1707 │             path: /sys
+1708 │         - name: root
+1709 └           hostPath:
+....   
+────────────────────────────────────────
+
+
+KSV-0014 (HIGH): Container 'grafana-sc-datasources' of Deployment 'monitoring-grafana' should set 'securityContext.readOnlyRootFilesystem' to true
+════════════════════════════════════════
+An immutable root file system prevents applications from writing to their local disk. This can limit intrusions, as attackers will not be able to tamper with the file system or write foreign executables to disk.
+
+See https://avd.aquasec.com/misconfig/ksv
+📣 [34mNotices:[0m
+  - Version 0.72.0 of Trivy is now available, current version is 0.70.0
+
+To suppress version checks, run Trivy scans with the --skip-version-check flag
+
+-0014
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:1741-1778
+────────────────────────────────────────
+1741 ┌         checksum/config: 5bceeca3808849664f09f642547ce17fdf495522238ef9ce952b20cfa36b7de5
+1742 │         checksum/sc-dashboard-provider-config: e70bf6a851099d385178a76de9757bb0bef8299da6d8443602590e44f05fdf24
+1743 │         checksum/secret: b6f9e21e2aca846ef01e6228978397bec25733f625005c51a245655f3103b970
+1744 │         kubectl.kubernetes.io/default-container: grafana
+1745 │     spec:
+1746 │       
+1747 │       serviceAccountName: monitoring-grafana
+1748 │       automountServiceAccountToken: true
+1749 └       shareProcessNamespace: false
+....   
+────────────────────────────────────────
+
+
+KSV-0041 (CRITICAL): ClusterRole 'monitoring-grafana-clusterrole' shouldn't have access to manage resource 'secrets'
+════════════════════════════════════════
+Viewing secrets at the cluster-scope is akin to cluster-admin in most clusters as there are typically at least one service accounts (their token stored in a secret) bound to cluster-admin directly or a role/clusterrole that gives similar permissions.
+
+See https://avd.aquasec.com/misconfig/ksv-0041
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:827-829
+────────────────────────────────────────
+ 827 ┌   scheduler.json: |-
+ 828 │     {"editable":true,"links":[{"asDropdown":true,"includeVars":true,"keepTime":true,"tags":["kubernetes-mixin"],"targetBlank":false,"title":"Kubernetes","type":"dashboards"}],"panels":[{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"unit":"none"}},"gridPos":{"h":7,"w":4,"x":0,"y":0},"id":1,"interval":"1m","options":{"colorMode":"none"},"pluginVersion":"v13.0.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(up{cluster=\"$cluster\", job=\"kube-scheduler\"})","instant":true}],"title":"Up","type":"stat"},{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":10,"showPoints":"never","spanNulls":true},"unit":"ops"}},"gridPos":{"h":7,"w":10,"x":4,"y":0},"id":2,"interval":"1m","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v13.0.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(rate(scheduler_scheduling_attempt_duration_seconds_count{cluster=\"$cluster\", job=\"kube-scheduler\", instance=~\"$instance\"}[$__rate_interval])) by (cluster, instance)","legendFormat":"{{cluster}} {{instance}} e2e"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(rate(scheduler_pod_scheduling_sli_duration_seconds_count{cluster=\"$cluster\", job=\"kube-scheduler\", instance=~\"$instance\"}[$__rate_interval])) by (cluster, instance)","legendFormat":"{{cluster}} {{instance}} binding"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(rate(scheduler_scheduling_algorithm_duration_seconds_count{cluster=\"$cluster\", job=\"kube-scheduler\", instance=~\"$instance\"}[$__rate_interval])) by (cluster, instance)","legendFormat":"{{cluster}} {{instance}} scheduling algorithm"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(rate(scheduler_volume_scheduling_duration_seconds_count{cluster=\"$cluster\", job=\"kube-scheduler\", instance=~\"$instance\"}[$__rate_interval])) by (cluster, instance)","legendFormat":"{{cluster}} {{instance}} volume"}],"title":"Scheduling Rate","type":"timeseries"},{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":10,"showPoints":"never","spanNulls":true},"unit":"s"}},"gridPos":{"h":7,"w":10,"x":14,"y":0},"id":3,"interval":"1m","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v13.0.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"histogram_quantile(0.99, sum(rate(scheduler_scheduling_attempt_duration_seconds_bucket{cluster=\"$cluster\", job=\"kube-scheduler\",instance=~\"$instance\"}[$__rate_interval])) by (cluster, instance, le))","legendFormat":"{{cluster}} {{instance}} e2e"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"histogram_quantile(0.99, sum(rate(scheduler_pod_scheduling_sli_duration_seconds_bucket{cluster=\"$cluster\", job=\"kube-scheduler\",instance=~\"$instance\"}[$__rate_interval])) by (cluster, instance, le))","legendFormat":"{{cluster}} {{instance}} binding"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"histogram_quantile(0.99, sum(rate(scheduler_scheduling_algorithm_duration_seconds_bucket{cluster=\"$cluster\", job=\"kube-scheduler\",instance=~\"$instance\"}[$__rate_interval])) by (cluster, instance, le))","legendFormat":"{{cluster}} {{instance}} scheduling algorithm"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"histogram_quantile(0.99, sum(rate(scheduler_volume_scheduling_duration_seconds_bucket{cluster=\"$cluster\", job=\"kube-scheduler\",instance=~\"$instance\"}[$__rate_interval])) by (cluster, instance, le))","legendFormat":"{{cluster}} {{instance}} volume"}],"title":"Scheduling latency 99th Quantile","type":"timeseries"},{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":10,"showPoints":"never","spanNulls":true},"unit":"ops"}},"gridPos":{"h":7,"w":8,"x":0,"y":7},"id":4,"interval":"1m","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v13.0.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(rate(rest_client_requests_total{cluster=\"$cluster\", job=\"kube-scheduler\", instance=~\"$instance\",code=~\"2..\"}[$__rate_interval]))","legendFormat":"2xx"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(rate(rest_client_requests_total{cluster=\"$cluster\", job=\"kube-scheduler\", instance=~\"$instance\",code=~\"3..\"}[$__rate_interval]))","legendFormat":"3xx"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(rate(rest_client_requests_total{cluster=\"$cluster\", job=\"kube-scheduler\", instance=~\"$instance\",code=~\"4..\"}[$__rate_interval]))","legendFormat":"4xx"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(rate(rest_client_requests_total{cluster=\"$cluster\", job=\"kube-scheduler\", instance=~\"$instance\",code=~\"5..\"}[$__rate_interval]))","legendFormat":"5xx"}],"title":"Kube API Request Rate","type":"timeseries"},{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":10,"showPoints":"never","spanNulls":true},"unit":"ops"}},"gridPos":{"h":7,"w":16,"x":8,"y":7},"id":5,"interval":"1m","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v13.0.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"histogram_quantile(0.99, sum(rate(rest_client_request_duration_seconds_bucket{cluster=\"$cluster\", job=\"kube-scheduler\", instance=~\"$instance\", verb=\"POST\"}[$__rate_interval])) by (verb, le))","legendFormat":"{{verb}}"}],"title":"Post Request Latency 99th Quantile","type":"timeseries"},{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":10,"showPoints":"never","spanNulls":true},"unit":"s"}},"gridPos":{"h":7,"w":24,"x":0,"y":14},"id":6,"interval":"1m","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v13.0.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"histogram_quantile(0.99, sum(rate(rest_client_request_duration_seconds_bucket{cluster=\"$cluster\", job=\"kube-scheduler\", instance=~\"$instance\", verb=\"GET\"}[$__rate_interval])) by (verb, le))","legendFormat":"{{verb}}"}],"title":"Get Request Latency 99th Quantile","type":"timeseries"},{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":10,"showPoints":"never","spanNulls":true},"unit":"bytes"}},"gridPos":{"h":7,"w":8,"x":0,"y":21},"id":7,"interval":"1m","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v13.0.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"process_resident_memory_bytes{cluster=\"$cluster\", job=\"kube-scheduler\", instance=~\"$instance\"}","legendFormat":"{{instance}}"}],"title":"Memory","type":"timeseries"},{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":10,"showPoints":"never","spanNulls":true},"unit":"short"}},"gridPos":{"h":7,"w":8,"x":8,"y":21},"id":8,"interval":"1m","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v13.0.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"rate(process_cpu_seconds_total{cluster=\"$cluster\", job=\"kube-scheduler\", instance=~\"$instance\"}[$__rate_interval])","legendFormat":"{{instance}}"}],"title":"CPU usage","type":"timeseries"},{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":10,"showPoints":"never","spanNulls":true},"unit":"short"}},"gridPos":{"h":7,"w":8,"x":16,"y":21},"id":9,"interval":"1m","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v13.0.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"go_goroutines{cluster=\"$cluster\", job=\"kube-scheduler\",instance=~\"$instance\"}","legendFormat":"{{instance}}"}],"title":"Goroutines","type":"timeseries"}],"refresh":"10s","schemaVersion":39,"tags":["kubernetes-mixin"],"templating":{"list":[{"current":{"selected":true,"text":"default","value":"default"},"hide":0,"label":"Data source","name":"datasource","query":"prometheus","regex":"","type":"datasource"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"hide":2,"label":"cluster","name":"cluster","query":"label_values(up{job=\"kube-scheduler\"}, cluster)","refresh":2,"sort":1,"type":"query","allValue":".*"},{"allValue":".+","datasource":{"type":"prometheus","uid":"${datasource}"},"hide":0,"includeAll":true,"label":"instance","name":"instance","query":"label_values(up{job=\"kube-scheduler\", cluster=\"$cluster\"}, instance)","refresh":2,"type":"query"}]},"time":{"from":"now-1h","to":"now"},"timezone": "utc","title":"Kubernetes / Scheduler","uid":"2e6b6a3b4bddf1427b3a55aa1311c656"}
+ 829 └ ---
+────────────────────────────────────────
+
+
+KSV-0041 (CRITICAL): ClusterRole 'monitoring-kube-prometheus-operator' shouldn't have access to manage resource 'secrets'
+════════════════════════════════════════
+Viewing secrets at the cluster-scope is akin to cluster-admin in most clusters as there are typically at least one service accounts (their token stored in a secret) bound to cluster-admin directly or a role/clusterrole that gives similar permissions.
+
+See https://avd.aquasec.com/misconfig/ksv-0041
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:1040-1046
+────────────────────────────────────────
+1040 ┌     heritage: "Helm"
+1041 │     app: kube-prometheus-stack-operator
+1042 │     app.kubernetes.io/name: kube-prometheus-stack-prometheus-operator
+1043 │     app.kubernetes.io/component: prometheus-operator
+1044 │ rules:
+1045 │ - apiGroups:
+1046 └   - monitoring.coreos.com
+────────────────────────────────────────
+
+
+KSV-0041 (CRITICAL): ClusterRole 'monitoring-kube-state-metrics' shouldn't have access to manage resource 'secrets'
+════════════════════════════════════════
+Viewing secrets at the cluster-scope is akin to cluster-admin in most clusters as there are typically at least one service accounts (their token stored in a secret) bound to cluster-admin directly or a role/clusterrole that gives similar permissions.
+
+See https://avd.aquasec.com/misconfig/ksv-0041
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:957-960
+────────────────────────────────────────
+ 957 ┌   - nodes
+ 958 │   verbs: ["list", "watch"]
+ 959 │ 
+ 960 └ - apiGroups: [""]
+────────────────────────────────────────
+
+
+KSV-0045 (CRITICAL): Role permits wildcard verb on specific resources
+════════════════════════════════════════
+Check whether role permits wildcard verb on specific resources
+
+See https://avd.aquasec.com/misconfig/ksv-0045
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:1034-1039
+────────────────────────────────────────
+1034 ┌     app.kubernetes.io/managed-by: Helm
+1035 │     app.kubernetes.io/instance: monitoring
+1036 │     app.kubernetes.io/version: "87.17.0"
+1037 │     app.kubernetes.io/part-of: kube-prometheus-stack
+1038 │     chart: kube-prometheus-stack-87.17.0
+1039 └     release: "monitoring"
+────────────────────────────────────────
+
+
+KSV-0045 (CRITICAL): Role permits wildcard verb on specific resources
+════════════════════════════════════════
+Check whether role permits wildcard verb on specific resources
+
+See https://avd.aquasec.com/misconfig/ksv-0045
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:1040-1046
+────────────────────────────────────────
+1040 ┌     heritage: "Helm"
+1041 │     app: kube-prometheus-stack-operator
+1042 │     app.kubernetes.io/name: kube-prometheus-stack-prometheus-operator
+1043 │     app.kubernetes.io/component: prometheus-operator
+1044 │ rules:
+1045 │ - apiGroups:
+1046 └   - monitoring.coreos.com
+────────────────────────────────────────
+
+
+KSV-0056 (HIGH): ClusterRole 'monitoring-kube-prometheus-operator' should not have access to resources ["services", "endpoints", "endpointslices", "networkpolicies", "ingresses"] for verbs ["create", "update", "patch", "delete", "deletecollection", "impersonate", "*"]
+════════════════════════════════════════
+The ability to control which pods get service traffic directed to them allows for interception attacks. Controlling network policy allows for bypassing lateral movement restrictions.
+
+See https://avd.aquasec.com/misconfig/ksv-0056
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:1102-1112
+────────────────────────────────────────
+1102 ┌   - update
+1103 │   - delete
+1104 │ - apiGroups:
+1105 │   - ""
+1106 │   resources:
+1107 │   - nodes
+1108 │   verbs:
+1109 │   - list
+1110 └   - watch
+....   
+────────────────────────────────────────
+
+
+KSV-0056 (HIGH): ClusterRole 'monitoring-kube-prometheus-operator' should not have access to resources ["services", "endpoints", "endpointslices", "networkpolicies", "ingresses"] for verbs ["create", "update", "patch", "delete", "deletecollection", "impersonate", "*"]
+════════════════════════════════════════
+The ability to control which pods get service traffic directed to them allows for interception attacks. Controlling network policy allows for bypassing lateral movement restrictions.
+
+See https://avd.aquasec.com/misconfig/ksv-0056
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:1054-1064
+────────────────────────────────────────
+1054 ┌   - prometheuses/status
+1055 │   - prometheusagents
+1056 │   - prometheusagents/finalizers
+1057 │   - prometheusagents/status
+1058 │   - thanosrulers
+1059 │   - thanosrulers/finalizers
+1060 │   - thanosrulers/status
+1061 │   - scrapeconfigs
+1062 └   - scrapeconfigs/status
+....   
+────────────────────────────────────────
+
+
+KSV-0114 (CRITICAL): ClusterRole 'monitoring-kube-prometheus-admission' should not have access to resources ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"] for verbs ["create", "update", "patch", "delete", "deletecollection", "impersonate", "*"]
+════════════════════════════════════════
+Webhooks can silently intercept or actively mutate/block resources as they are being created or updated. This includes secrets and pod specs.
+
+See https://avd.aquasec.com/misconfig/ksv-0114
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:6303-6311
+────────────────────────────────────────
+6303 ┌     
+6304 │     app.kubernetes.io/managed-by: Helm
+6305 │     app.kubernetes.io/instance: monitoring
+6306 │     app.kubernetes.io/version: "87.17.0"
+6307 │     app.kubernetes.io/part-of: kube-prometheus-stack
+6308 │     chart: kube-prometheus-stack-87.17.0
+6309 │     release: "monitoring"
+6310 │     heritage: "Helm"
+6311 └     app: kube-prometheus-stack-operator
+────────────────────────────────────────
+
+
+KSV-0121 (HIGH): daemonset monitoring-prometheus-node-exporter in monitoring namespace shouldn't have volumes set to {"/", "/proc", "/sys"}
+════════════════════════════════════════
+HostPath present many security risks and as a security practice it is better to avoid critical host paths mounts.
+
+See https://avd.aquasec.com/misconfig/ksv-0121
+────────────────────────────────────────
+ rendered/monitoring-dev.yaml:1539-1655
+────────────────────────────────────────
+1539 ┌   selector:
+1540 │     app: kube-prometheus-stack-operator
+1541 │     release: "monitoring"
+1542 │   type: "ClusterIP"
+1543 │ 
+1544 │ ---
+1545 │ # Source: kube-prometheus-stack/templates/prometheus/service.yaml
+1546 │ apiVersion: v1
+1547 └ kind: Service
+....   
+────────────────────────────────────────
+
+

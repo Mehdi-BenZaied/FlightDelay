@@ -1,0 +1,9 @@
+Trivy mode: source
+Trivy image: aquasec/trivy:0.70.0
+Gate severities: HIGH,CRITICAL
+License gate severities: CRITICAL
+
+Result: FAILED
+Blocking scan groups:
+  - source-vulnerabilities
+  - source-misconfigurations

