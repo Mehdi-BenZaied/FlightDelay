@@ -23,6 +23,12 @@ pipeline {
         )
 
         booleanParam(
+            name: 'RUN_SONARQUBE_ANALYSIS',
+            defaultValue: true,
+            description: 'Run SonarQube static analysis and block publication when the Quality Gate fails'
+        )
+
+        booleanParam(
             name: 'AI_FAILURE_ANALYSIS',
             defaultValue: true,
             description: 'Analyze failed pipeline logs with local Ollama'
@@ -98,6 +104,14 @@ pipeline {
         TRIVY_GATE_SEVERITY    = 'HIGH,CRITICAL'
         TRIVY_LICENSE_SEVERITY = 'CRITICAL'
         TRIVY_SCRIPT           = 'scripts/security/trivy-gate.sh'
+
+        SONARQUBE_CREDENTIALS = 'sonarqube-token'
+        SONARQUBE_PROJECT_KEY = 'flight-delay'
+        SONARQUBE_PROJECT_NAME = 'FlightDelay'
+        SONARQUBE_LOCAL_URL = 'http://127.0.0.1:9000'
+        SONARQUBE_SCANNER_URL = 'http://host.docker.internal:9000'
+        SONAR_SCANNER_IMAGE = 'sonarsource/sonar-scanner-cli:12.1.0.3233_8.0.1'
+        SONAR_QUALITY_GATE_TIMEOUT = '600'
 
         REGISTRY_CREDENTIALS   = 'DockerHub'
         KUBECONFIG_CREDENTIALS = 'kind-flight-delay-kubeconfig'
@@ -238,6 +252,8 @@ pipeline {
                     echo "Ollama URL in Compose: ${env.OLLAMA_BASE_URL}"
                     echo "Ollama analysis timeout: ${env.OLLAMA_REQUEST_TIMEOUT_SECONDS} seconds"
                     echo "Trivy security gates enabled: ${params.RUN_TRIVY_SCAN}"
+                    echo "SonarQube analysis enabled: ${params.RUN_SONARQUBE_ANALYSIS}"
+                    echo "SonarQube project: ${env.SONARQUBE_PROJECT_KEY}"
                 }
             }
         }
@@ -316,6 +332,20 @@ pipeline {
                         echo 'Trivy security gates are enabled and the script is valid.'
                     else
                         echo 'Trivy security gates are disabled for this build.'
+                    fi
+
+                    if [ "${RUN_SONARQUBE_ANALYSIS:-false}" = "true" ]; then
+                        test -f "$WORKSPACE_ROOT/sonar-project.properties"
+
+                        if [ -z "${SONARQUBE_CREDENTIALS:-}" ]; then
+                            echo 'ERROR: SONARQUBE_CREDENTIALS is not configured.'
+                            exit 1
+                        fi
+
+                        echo "SonarQube project properties found: $WORKSPACE_ROOT/sonar-project.properties"
+                        echo "SonarScanner image: $SONAR_SCANNER_IMAGE"
+                    else
+                        echo 'SonarQube analysis is disabled for this build.'
                     fi
 
                     echo '===== Project files ====='
@@ -919,6 +949,118 @@ PYTHON_OLLAMA_CHECK
                           --volumes \
                           --remove-orphans || true
                     '''
+                }
+            }
+        }
+
+        stage('SonarQube Quality Gate') {
+            when {
+                expression {
+                    params.RUN_SONARQUBE_ANALYSIS &&
+                    env.SOURCE_BRANCH == 'main'
+                }
+            }
+
+            steps {
+                script { env.LAST_STAGE = 'SonarQube Quality Gate' }
+
+                withCredentials([
+                    string(
+                        credentialsId: env.SONARQUBE_CREDENTIALS,
+                        variable: 'SONAR_TOKEN'
+                    )
+                ]) {
+                    sh '''#!/usr/bin/env bash
+                        set -Eeuo pipefail
+                        set +x
+
+                        WORKSPACE_ROOT="$(pwd -P)"
+                        SONAR_LOG="$WORKSPACE_ROOT/$CI_LOGS_DIR/sonarqube-analysis.log"
+
+                        mkdir -p "$CI_LOGS_DIR"
+                        rm -rf "$WORKSPACE_ROOT/.scannerwork"
+
+                        echo '===== SonarQube server health =====' |
+                          tee "$SONAR_LOG"
+
+                        SONAR_STATUS='UNKNOWN'
+
+                        for attempt in $(seq 1 60); do
+                            SONAR_RESPONSE="$(
+                              curl \
+                                --fail \
+                                --silent \
+                                --show-error \
+                                --connect-timeout 5 \
+                                --max-time 20 \
+                                "$SONARQUBE_LOCAL_URL/api/system/status" \
+                                2>> "$SONAR_LOG" || true
+                            )"
+
+                            if [ -n "$SONAR_RESPONSE" ]; then
+                                SONAR_STATUS="$(
+                                  printf '%s' "$SONAR_RESPONSE" |
+                                  python3 -c 'import json, sys; print(json.load(sys.stdin).get("status", "UNKNOWN"))' \
+                                  2>> "$SONAR_LOG" || printf 'UNKNOWN'
+                                )"
+                            fi
+
+                            echo "SonarQube status: $SONAR_STATUS (attempt $attempt/60)" |
+                              tee -a "$SONAR_LOG"
+
+                            if [ "$SONAR_STATUS" = 'UP' ]; then
+                                break
+                            fi
+
+                            sleep 5
+                        done
+
+                        if [ "$SONAR_STATUS" != 'UP' ]; then
+                            echo "ERROR: SonarQube is not ready at $SONARQUBE_LOCAL_URL." |
+                              tee -a "$SONAR_LOG"
+                            exit 1
+                        fi
+
+                        echo '===== SonarScanner analysis =====' |
+                          tee -a "$SONAR_LOG"
+                        echo "Project key: $SONARQUBE_PROJECT_KEY" |
+                          tee -a "$SONAR_LOG"
+                        echo "Project version: $IMAGE_TAG" |
+                          tee -a "$SONAR_LOG"
+                        echo "Scanner image: $SONAR_SCANNER_IMAGE" |
+                          tee -a "$SONAR_LOG"
+
+                        docker run \
+                          --rm \
+                          --pull missing \
+                          --user "$(id -u):$(id -g)" \
+                          --add-host host.docker.internal:host-gateway \
+                          --env SONAR_HOST_URL="$SONARQUBE_SCANNER_URL" \
+                          --env SONAR_TOKEN \
+                          --env SONAR_USER_HOME=/tmp/.sonar \
+                          --volume "$WORKSPACE_ROOT:/usr/src" \
+                          --workdir /usr/src \
+                          "$SONAR_SCANNER_IMAGE" \
+                          -Dsonar.projectKey="$SONARQUBE_PROJECT_KEY" \
+                          -Dsonar.projectName="$SONARQUBE_PROJECT_NAME" \
+                          -Dsonar.projectVersion="$IMAGE_TAG" \
+                          -Dsonar.qualitygate.wait=true \
+                          -Dsonar.qualitygate.timeout="$SONAR_QUALITY_GATE_TIMEOUT" \
+                          2>&1 | tee -a "$SONAR_LOG"
+
+                        echo 'SonarQube analysis completed and the Quality Gate passed.' |
+                          tee -a "$SONAR_LOG"
+                    '''
+                }
+            }
+
+            post {
+                always {
+                    archiveArtifacts(
+                        artifacts: '.scannerwork/report-task.txt, ci-logs/sonarqube-analysis.log',
+                        allowEmptyArchive: true,
+                        fingerprint: true
+                    )
                 }
             }
         }
