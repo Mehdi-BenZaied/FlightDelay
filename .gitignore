@@ -35,3 +35,11 @@ dist-ssr/
 *.local
 
 
+@"
+
+# Terraform generated files
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+"@ | Add-Content .gitignore
